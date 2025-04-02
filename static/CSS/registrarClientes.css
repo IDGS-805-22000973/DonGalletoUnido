@@ -1,0 +1,22 @@
+/* Asegúrate de que la fuente se cargue correctamente desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap');
+
+body{
+    background-image: url("../img/GalleteriaDonGalleto.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+h2 {
+    color: white;
+    font-size: 2.5rem; /* Título más grande */
+}
+
+.form-label {
+    font-size: 20px; /* Aumentar tamaño de los labels */
+    font-weight: 600; /* Opcional, hacer la fuente más negrita */
+}
+
+.btn {
+    font-size: 1.25rem; /* Botón más grande */
+}

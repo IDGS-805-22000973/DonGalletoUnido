@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block container %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/registrarClientes.css') }}">
+
+<div class="container py-5">
+    <h2 class="text-center mb-4">Registro de Clientes</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">                    
+                    <form method="POST" action="{{ url_for('auth.registrarClientes') }}" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">Nombre Completo*</label>
+                                    <input type="text" class="form-control {{ 'is-invalid' if form.nombre.errors }}" 
+                                           id="nombre" name="nombre" value="{{ form.nombre.data or '' }}" required>
+                                    {% for error in form.nombre.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email*</label>
+                                    <input type="email" class="form-control {{ 'is-invalid' if form.email.errors }}" 
+                                           id="email" name="email" value="{{ form.email.data or '' }}" required>
+                                    {% for error in form.email.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Contraseña*</label>
+                                    <input type="password" class="form-control {{ 'is-invalid' if form.password.errors }}" 
+                                           id="password" name="password" required>
+                                    <small class="form-text text-muted">Mínimo 8 caracteres</small>
+                                    {% for error in form.password.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="telefono" class="form-label">Teléfono*</label>
+                                    <input type="tel" class="form-control {{ 'is-invalid' if form.telefono.errors }}" 
+                                           id="telefono" name="telefono" value="{{ form.telefono.data or '' }}" required>
+                                    {% for error in form.telefono.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="rol" class="form-label">Tipo de Usuario*</label>
+                                    <select class="form-select {{ 'is-invalid' if form.rol.errors }}" 
+                                            id="rol" name="rol" required>
+                                        <option value="Cliente" selected>Cliente</option>
+                                    </select>
+                                    {% for error in form.rol.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="direccion" class="form-label">Dirección*</label>
+                                    <textarea class="form-control {{ 'is-invalid' if form.direccion.errors }}" 
+                                              id="direccion" name="direccion" rows="2" required>{{ form.direccion.data or '' }}</textarea>
+                                    {% for error in form.direccion.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">Registrarse</button>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <p>¿Ya tienes una cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

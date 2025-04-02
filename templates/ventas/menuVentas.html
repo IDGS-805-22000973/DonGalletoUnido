@@ -1,0 +1,72 @@
+{% extends "layout2.html" %}
+{% block container %}
+
+<div class="container py-4">
+    <h2 class="text-center mb-4">Gestión de Pedidos - Ventas</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Fecha Pedido</th>
+                    <th>Fecha Entrega</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pedido in pedidos %}
+                <tr>
+                    <td>{{ pedido.id }}</td>
+                    <td>{{ pedido.cliente.nombre }}</td>
+                    <td>{{ pedido.fecha_pedido.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        {% if pedido.fecha_entrega %}
+                            {{ pedido.fecha_entrega.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>${{ "%.2f"|format(pedido.total) }}</td>
+                    <td>{{ pedido.estado }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('ventas.cambiar_estado', pedido_id=pedido.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="nuevo_estado" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="" disabled selected>Cambiar estado</option>
+                                <option value="Pendiente" {% if pedido.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                                <option value="En Proceso" {% if pedido.estado == 'En Proceso' %}selected{% endif %}>En Proceso</option>
+                                <option value="Listo" {% if pedido.estado == 'Listo' %}selected{% endif %}>Listo</option>
+                                <option value="Entregado" {% if pedido.estado == 'Entregado' %}selected{% endif %}>Entregado</option>
+                                <option value="Cancelado" {% if pedido.estado == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                            </select>
+                        </form>
+                        <a href="{{ url_for('ventas.detalle_pedido', pedido_id=pedido.id) }}" class="btn btn-sm btn-info ms-2">
+                            Detalles
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No hay pedidos registrados</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

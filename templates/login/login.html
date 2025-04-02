@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block container %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/login.css') }}" />
+
+<div class="container d-flex justify-content-center align-items-center" style="height: 70vh;">
+    <div class="card" style="width: 400px;">
+        <div class="card-body">
+            <h5 class="card-title text-center">Inicio de sesión</h5>
+            <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control {{ 'is-invalid' if form.email.errors }}" 
+                           id="email" name="email" value="{{ form.email.data or '' }}" required>
+                    {% for error in form.email.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control {{ 'is-invalid' if form.password.errors }}" 
+                           id="password" name="password" required>
+                    {% for error in form.password.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                    <label class="form-check-label" for="remember_me">Recordar sesión</label>
+                </div>
+                
+                <div class="mb-3 text-center">
+                    <a href="{{ url_for('auth.registrarClientes') }}">¿No tienes cuenta? Regístrate</a>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100">Iniciar sesión</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

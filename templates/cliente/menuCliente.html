@@ -1,0 +1,117 @@
+{% extends "layout2.html" %}
+{% block container %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/pedidos.css') }}">
+
+<div class="container py-5">
+    <h2 class="text-center mb-4">Realizar Pedido</h2>
+    <form method="POST" action="{{ url_for('cliente.menuCliente') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="row">
+            {% if galletas %}
+                {% for galleta in galletas %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <img src="{{ url_for('static', filename='img/galleta.png') }}" 
+                                 class="card-img-top" 
+                                 alt="{{ galleta.nombre }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ galleta.nombre }}</h5>
+                                <p class="card-text">{{ galleta.descripcion }}</p>
+                                <p class="text-success"><strong>Precio por unidad: ${{ "%.2f"|format(galleta.precio) }}</strong></p>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Presentación:</label>
+                                    <select class="form-select mb-2" name="presentacion_{{ galleta.id }}" required>
+                                        {% for key, pres in presentaciones.items() %}
+                                            <option value="{{ key }}">{{ pres.nombre }} ({{ pres.unidad }})</option>
+                                        {% endfor %}
+                                    </select>
+                                    
+                                    <label for="cantidad_{{ galleta.id }}" class="form-label">Cantidad:</label>
+                                    <input type="number" 
+                                           id="cantidad_{{ galleta.id }}"
+                                           name="cantidad_{{ galleta.id }}"
+                                           class="form-control" 
+                                           value="0" 
+                                           min="0" 
+                                           step="0.01"
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        No hay galletas disponibles actualmente.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Información de Entrega</h5>
+                        
+                        <div class="mb-3">
+                            <label for="fecha_entrega" class="form-label">Fecha deseada:</label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="fecha_entrega" 
+                                   name="fecha_entrega" 
+                                   required
+                                   min="{{ min_date }}"
+                                   max="{{ max_date }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Instrucciones especiales:</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-cart-check"></i> Confirmar Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validar antes de enviar
+    document.querySelector('form').addEventListener('submit', function(e) {
+        let hasItems = false;
+        document.querySelectorAll('input[name^="cantidad_"]').forEach(input => {
+            if (parseFloat(input.value) > 0) hasItems = true;
+        });
+        
+        if (!hasItems) {
+            e.preventDefault();
+            alert('Debe agregar al menos un producto a su pedido');
+            return false;
+        }
+        
+        const fecha = new Date(document.getElementById('fecha_entrega').value);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        if (fecha < new Date(hoy.setDate(hoy.getDate() + 2)) || 
+            fecha > new Date(hoy.setDate(hoy.getDate() + 28))) {
+            e.preventDefault();
+            alert('La fecha debe ser entre 2 y 30 días a partir de hoy');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

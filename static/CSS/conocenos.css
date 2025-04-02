@@ -1,0 +1,53 @@
+/* Importar la fuente Montserrat desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #F8F4E3;
+}
+
+h2 {
+    font-weight: 600;
+    color: #333;
+}
+
+.card {
+    border-radius: 10px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.card:hover {
+    transform: scale(1.03);
+}
+
+.card-title {
+    font-weight: 600;
+    color: #5a5a5a;
+    text-align: center;
+}
+
+.card-text {
+    font-weight: 400;
+    color: #333;
+    text-align: justify;
+}
+
+/* Centrar las tarjetas */
+.row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+h2 i, h2 svg {
+    font-size: 2rem; 
+    width: 22px; 
+    height: 22px;
+    vertical-align: middle; 
+}

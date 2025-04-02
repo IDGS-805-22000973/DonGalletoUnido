@@ -1,0 +1,65 @@
+{% extends "layout2.html" %}
+{% block container %}
+
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Procesar Pago - Pedido #{{ pedido.id }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Información del Pedido</h5>
+                    <p><strong>Cliente:</strong> {{ pedido.cliente.nombre }}</p>
+                    <p><strong>Total:</strong> ${{ "%.2f"|format(pedido.total) }}</p>
+                </div>
+            </div>
+            
+            <form method="POST" action="{{ url_for('ventas.procesar_pago', pedido_id=pedido.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="monto_recibido" class="form-label">Monto Recibido*</label>
+                            <input type="number" class="form-control" id="monto_recibido" 
+                                   name="monto_recibido" step="0.01" min="{{ pedido.total }}" 
+                                   value="{{ pedido.total }}" required>
+                            <small class="form-text text-muted">Ingrese el monto recibido del cliente</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Cambio</label>
+                            <div class="form-control-plaintext">
+                                $<span id="cambio">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a href="{{ url_for('ventas.menuVentas') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Confirmar Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const montoRecibido = document.getElementById('monto_recibido');
+    const cambioSpan = document.getElementById('cambio');
+    const total = {{ pedido.total }};
+    
+    montoRecibido.addEventListener('input', function() {
+        const recibido = parseFloat(this.value) || 0;
+        const cambio = recibido - total;
+        cambioSpan.textContent = cambio.toFixed(2);
+    });
+});
+</script>
+
+{% endblock %}

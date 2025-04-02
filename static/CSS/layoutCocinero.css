@@ -1,0 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Oleo+Script:wght@400;700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
+
+* {
+    font-family: "Montserrat", sans-serif;
+}
+
+body {
+    background-color: #FFF1F1;
+}
+
+.sidebar {
+    height: 100vh;
+    background-color: #997F63;
+    padding-top: 10px;
+    position: fixed;
+    left: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar.expanded {
+    width: 250px;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ffffff;
+    padding-bottom: 10px;
+}
+
+.logo {
+    width: 50px;
+    height: auto;
+    margin-right: 10px;
+    border-radius: 100%;
+}
+
+.sidebar h4 {
+    font-family: "Oleo Script", sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    transition: all 0.3s ease;
+    color: #ffffff;
+}
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+.sidebar span {
+    font-family: "Oleo Script", sans-serif;
+    font-size: 20px;
+}
+
+.sidebar a i {
+    font-size: 24px;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+.sidebar.collapsed a i {
+    margin: 0 auto;
+}
+
+.sidebar.collapsed a span {
+    display: none;
+}
+
+.sidebar a:hover {
+    background-color: #E8CFC1;
+    color: #3A2812;
+    border-radius: 35px;
+    padding: 10px 20px;
+}
+
+.content {
+    margin-left: 250px;
+    transition: all 0.3s ease;
+}
+
+.content h2 {
+    font-weight: bold;
+    font-size: 28px;
+}
+
+.card {
+    background-color: #E8CFC1;
+    border: none;
+    border-radius: 30px;
+}
+
+.card h5 {
+    font-family: "Oleo Script", sans-serif;
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: bold;
+}
+
+.card-text {
+    font-size: 1rem;
+    padding: 30px;
+    text-align: center;
+}
+
+.card-body img {
+    max-width: 80%;
+    height: auto;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto;
+}
+
+.card-galletas {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-galletas:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card-body .galletas {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 60px;
+}
+
+.card-title .galletas {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    word-wrap: break-word;
+}
+
+table.table thead th {
+    font-family: "Montserrat", sans-serif;
+    background-color: #3A2812 !important;
+    color: white !important;
+}
+
+table.table tbody td {
+    font-family: "Montserrat", sans-serif;
+    background-color: #C3BFBF;
+}
+
+.modal-content {
+    background-color: #FFF1F1 !important;
+}
+
+.modal-content {
+    background-color: #FFF1F1 !important;
+}
+
+.modal-header h5 {
+    font-size: 25px;
+    color: #3A2812;
+    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+    width: 100%;
+}
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Botón de salir con margen automático superior */
+.btn-danger {
+    margin-top: auto;
+}
+.status-box {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    text-transform: capitalize;
+    margin-top: 10px;
+}
+
+.status-text {
+    font-size: 16px;
+}

@@ -1,0 +1,237 @@
+{% extends "layoutCocinero.html" %}
+
+{% block container %}
+<!-- Meta tag para CSRF Token -->
+<meta name="csrf-token" content="{{ csrf_token }}">
+
+<div class="container py-5">
+    <h2 class="text-center mb-4">Gestión de Producción</h2>
+    
+    <!-- Mensaje sin galletas -->
+    {% if galletas|length == 0 %}
+    <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle me-2"></i>
+        No hay galletas que requieran producción actualmente.
+        <div class="mt-2">
+            <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#ayudaModal">
+                <i class="fas fa-question-circle me-1"></i> ¿Por qué no veo galletas?
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        {% for galleta, estado, stock in galletas %}
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between">
+                    <span class="badge bg-secondary">#{{ galleta.id }}</span>
+                    <span class="text-muted small">Stock: {{ stock }}</span>
+                </div>
+                
+                <img src="{{ url_for('static', filename='img/galleta.png') }}" 
+                class="card-img-top" 
+                alt="{{ galleta.nombre }}">
+                
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title text-center">{{ galleta.nombre }}</h5>
+                    
+                    <!-- Estado -->
+                    <button class="btn estado-btn mt-auto mb-3"
+                            data-id="{{ galleta.id }}"
+                            data-estado="{{ estado }}">
+                        {{ estado }}
+                    </button>
+                    
+                    <!-- Cantidad (solo visible en Completada) -->
+                    <div class="cantidad-container {% if estado != 'Completada' %}d-none{% endif %}">
+                        <div class="input-group mb-2">
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="cantidad-{{ galleta.id }}"
+                                   min="1" 
+                                   value="10"
+                                   required>
+                            <span class="input-group-text">unid.</span>
+                        </div>
+                        <button class="btn btn-success guardar-cantidad-btn w-100"
+                                data-id="{{ galleta.id }}">
+                            <i class="fas fa-save me-1"></i> Registrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Ayuda -->
+<div class="modal fade" id="ayudaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Ayuda de Producción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Flujo de trabajo:</h6>
+                <ol>
+                    <li><span class="badge bg-danger">Pendiente</span> - Lista para revisión</li>
+                    <li><span class="badge bg-primary">Aprobada</span> - Ingredientes verificados</li>
+                    <li><span class="badge bg-success">Completada</span> - Producción terminada</li>
+                </ol>
+                <p class="mb-0">Al guardar la producción, el estado vuelve a <span class="badge bg-danger">Pendiente</span> para una nueva revisión.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const urlActualizar = "{{ url_for('chefCocinero.actualizar_estado') }}";
+    const urlGuardar = "{{ url_for('chefCocinero.guardar_cantidad') }}";
+    
+    // Obtener token CSRF
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]').content || 
+               document.cookie.match(/csrf_token=([^;]+)/)?.[1];
+    }
+    
+    // Actualizar apariencia del botón de estado
+    function actualizarBoton(btn) {
+        const estado = btn.dataset.estado;
+        btn.className = 'btn estado-btn mt-auto mb-3 ';
+        
+        if(estado === 'Pendiente') btn.classList.add('btn-danger');
+        else if(estado === 'Aprobada') btn.classList.add('btn-primary');
+        else if(estado === 'Completada') btn.classList.add('btn-success');
+        
+        // Mostrar/ocultar cantidad
+        btn.closest('.card-body').querySelector('.cantidad-container')
+            .classList.toggle('d-none', estado !== 'Completada');
+    }
+    
+    // Configurar botones de estado
+    document.querySelectorAll('.estado-btn').forEach(btn => {
+        actualizarBoton(btn);
+        
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            const estadoActual = this.dataset.estado;
+            const estados = ['Pendiente', 'Aprobada', 'Completada'];
+            const nuevoEstado = estados[(estados.indexOf(estadoActual) + 1) % estados.length];
+            
+            try {
+                const res = await fetch(urlActualizar, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        idGalleta: id,
+                        nuevo_estado: nuevoEstado
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if(!res.ok) throw new Error(data.error || 'Error al actualizar');
+                
+                // Actualizar interfaz
+                this.dataset.estado = data.nuevo_estado;
+                actualizarBoton(this);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Estado actualizado',
+                    text: `Cambiado a: ${data.nuevo_estado}`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                
+            } catch(error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'No se pudo actualizar el estado'
+                });
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Configurar botones de guardar
+    document.querySelectorAll('.guardar-cantidad-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            const input = document.getElementById(`cantidad-${id}`);
+            const cantidad = parseInt(input.value);
+            
+            if(!cantidad || cantidad < 1) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Cantidad inválida',
+                    text: 'Ingrese un número mayor a 0'
+                });
+                input.focus();
+                return;
+            }
+            
+            try {
+                const res = await fetch(urlGuardar, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        idGalleta: id,
+                        cantidad: cantidad
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if(!res.ok) throw new Error(data.error || 'Error al guardar');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Producción registrada',
+                    text: data.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => location.reload());
+                
+            } catch(error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'No se pudo guardar la producción'
+                });
+                console.error('Error:', error);
+            }
+        });
+    });
+});
+</script>
+
+<style>
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .estado-btn {
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+    .cantidad-container {
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "layout2.html" %}
+
+{% block container %}
+<div class="container-fluid py-4">
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Lista de Empleados</h3>
+                <a href="{{ url_for('admin.agregarEmpleado') }}" class="btn btn-success">
+                    <i class="bi bi-person-plus-fill me-2"></i>Agregar Empleado
+                </a>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Rol</th>
+                            <th scope="col">Correo</th>
+                            <th scope="col">Teléfono</th>
+                            <th scope="col" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usu in usuarios %}
+                        <tr>
+                            <td class="align-middle">{{ usu.nombre }}</td>
+                            <td class="align-middle">
+                                <span class="badge bg-{{ 'info' if usu.rol == 'Ventas' else 'warning' }}">
+                                    {{ usu.rol }}
+                                </span>
+                            </td>
+                            <td class="align-middle">{{ usu.email }}</td>
+                            <td class="align-middle">{{ usu.telefono }}</td>
+                            <td class="align-middle text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a href="{{ url_for('admin.modificar', id=usu.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-pencil-square"></i> Modificar
+                                    </a>
+                                    <form action="{{ url_for('admin.eliminar', id=usu.id) }}" method="POST" style="display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-sm btn-danger"
+                                                onclick="return confirm('¿Estás seguro de eliminar este empleado?');">
+                                            <i class="bi bi-trash-fill"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+    .card {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+    }
+</style>
+
+<script>
+    // Inicializar tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

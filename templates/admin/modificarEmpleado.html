@@ -1,0 +1,111 @@
+{% extends "layout2.html" %}
+{% block container %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/registrarClientes.css') }}">
+<div class="container py-5">
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Modificar Empleado </h3>
+        </div>
+        
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin.modificar') }}" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id" value="{{ form.id.data }}">
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre*</label>
+                            <input type="text" class="form-control {{ 'is-invalid' if form.nombre.errors }}" 
+                                   id="nombre" name="nombre" value="{{ form.nombre.data }}" required>
+                            {% for error in form.nombre.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email*</label>
+                            <input type="email" class="form-control {{ 'is-invalid' if form.email.errors }}" 
+                                   id="email" name="email" value="{{ form.email.data }}" required>
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control {{ 'is-invalid' if form.password.errors }}" 
+                                   id="password" name="password" placeholder="Dejar vacío para no cambiar">
+                            {% for error in form.password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="telefono" class="form-label">Teléfono*</label>
+                            <input type="tel" class="form-control {{ 'is-invalid' if form.telefono.errors }}" 
+                                   id="telefono" name="telefono" value="{{ form.telefono.data }}" required>
+                            {% for error in form.telefono.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="rol" class="form-label">Rol*</label>
+                            <select class="form-select {{ 'is-invalid' if form.rol.errors }}" 
+                                    id="rol" name="rol" required>
+                                <option value="Ventas" {% if form.rol.data == 'Ventas' %}selected{% endif %}>Ventas</option>
+                                <option value="Cocina" {% if form.rol.data == 'Cocina' %}selected{% endif %}>Cocina</option>
+                                <option value="Admin" {% if form.rol.data == 'Admin' %}selected{% endif %}>Administrador</option>
+                                <option value="Cliente" {% if form.rol.data == 'Cliente' %}selected{% endif %}>Cliente</option>
+                            </select>
+                            {% for error in form.rol.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="fechaRegistro" class="form-label">Fecha de Registro*</label>
+                            <input type="date" class="form-control {{ 'is-invalid' if form.fechaRegistro.errors }}" 
+                                   id="fechaRegistro" name="fechaRegistro" value="{{ form.fechaRegistro.data.strftime('%Y-%m-%d') if form.fechaRegistro.data else '' }}" required>
+                            {% for error in form.fechaRegistro.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label for="direccion" class="form-label">Dirección*</label>
+                            <textarea class="form-control {{ 'is-invalid' if form.direccion.errors }}" 
+                                      id="direccion" name="direccion" rows="3" required>{{ form.direccion.data }}</textarea>
+                            {% for error in form.direccion.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.ABCempleados') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
