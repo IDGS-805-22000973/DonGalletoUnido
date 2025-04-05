@@ -1,0 +1,337 @@
+{% extends "layoutVentas.html" %}
+{% import "_macros.html" as macros %}
+{% block container %}
+
+<input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
+
+<link rel="stylesheet" href="">
+
+<div class="container">
+    <h2>Registrar Venta</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <label for="nombre_galleta" class="form-label">Galleta:</label>
+            <select id="nombre_galleta" class="form-select">
+                {% for galleta in galletas %}
+                    <option value="{{ galleta.nombre }}">{{ galleta.nombre }} - ${{ galleta.precio }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label for="presentacion" class="form-label">Presentación:</label>
+            <select id="presentacion" class="form-select">
+                <option value="pieza">Pieza</option>
+                <option value="paquete_700g">Paquete 700g</option>
+                <option value="paquete_1kg">Paquete 1kg</option>
+                <option value="gramos">Gramos (múltiplos de 100g)</option>
+                <option value="kilos">Kilos</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label for="cantidad" class="form-label">Cantidad:</label>
+            <input type="number" id="cantidad" class="form-control" min="1" value="1">
+        </div>
+        
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-primary w-100" onclick="agregarProducto()">Agregar</button>
+        </div>
+    </div>
+
+    <div id="error-display" class="alert alert-danger mb-3" style="display: none;"></div>
+
+    <h3 class="mt-4">Carrito</h3>
+    <ul id="carrito" class="list-group mb-3"></ul>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 id="total" class="mb-0">Total: $0.00</h4>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <label for="monto_recibido" class="form-label">Monto recibido:</label>
+            <input type="number" id="monto_recibido" class="form-control" step="0.01" min="0">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-success w-100" onclick="guardarVenta(false)">Guardar Venta</button>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-info w-100" onclick="guardarVenta(true)">Guardar e Imprimir</button>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+// Actualiza las opciones del select de presentaciones al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarCarrito();
+    
+    // Configurar las opciones de presentación según el nuevo esquema
+    const presentacionSelect = document.getElementById('presentacion');
+    presentacionSelect.innerHTML = '';
+    
+    const opcionesPresentacion = [
+        {value: 'pieza', text: 'Pieza (1 unidad)'},
+        {value: 'gramos', text: 'Gramos (múltiplos de 100g)'},
+        {value: '700g', text: 'Paquete 700g (7 unidades)'},
+        {value: '1kg', text: 'Paquete 1kg (10 unidades)'}
+    ];
+    
+    opcionesPresentacion.forEach(opcion => {
+        const option = document.createElement('option');
+        option.value = opcion.value;
+        option.textContent = opcion.text;
+        presentacionSelect.appendChild(option);
+    });
+});
+
+// Modifica la función agregarProducto para validar presentaciones
+async function agregarProducto() {
+    const errorDisplay = document.getElementById('error-display');
+    errorDisplay.style.display = 'none';
+    
+    try {
+        let nombreGalleta = document.getElementById('nombre_galleta').value;
+        let presentacion = document.getElementById('presentacion').value;
+        let cantidad = document.getElementById('cantidad').value;
+        let csrfToken = document.getElementById('csrf_token').value;
+
+        // Validaciones básicas
+        if (!nombreGalleta || !presentacion || !cantidad) {
+            throw new Error('Todos los campos son requeridos');
+        }
+
+        // Validar cantidad
+        cantidad = parseInt(cantidad);
+        if (isNaN(cantidad) || cantidad <= 0) {
+            throw new Error('La cantidad debe ser un número positivo');
+        }
+
+        // Validación especial para gramos (múltiplos de 100)
+        if (presentacion === 'gramos' && cantidad % 100 !== 0) {
+            throw new Error('Para venta por gramos, la cantidad debe ser múltiplo de 100');
+        }
+
+        let response = await fetch('/ventas/agregar_producto', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ 
+                nombre_galleta: nombreGalleta, 
+                presentacion: presentacion, 
+                cantidad: cantidad 
+            })
+        });
+
+        let data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al agregar producto');
+        }
+
+        actualizarCarrito();
+        
+        // Resetear cantidad después de agregar
+        document.getElementById('cantidad').value = 1;
+        
+    } catch (error) {
+        errorDisplay.textContent = error.message;
+        errorDisplay.style.display = 'block';
+        console.error('Error en agregarProducto:', error);
+    }
+}
+
+// Función para mostrar los productos en el carrito
+async function actualizarCarrito() {
+    try {
+        let response = await fetch('/ventas/carrito');
+        if (!response.ok) throw new Error('Error al obtener carrito');
+        let carrito = await response.json();
+        
+        let lista = document.getElementById('carrito');
+        lista.innerHTML = '';
+        let total = 0;
+
+        if (carrito.length === 0) {
+            lista.innerHTML = '<li class="list-group-item">El carrito está vacío</li>';
+            document.getElementById('total').innerText = 'Total: $0.00';
+            return;
+        }
+
+        carrito.forEach((item) => {
+            let subtotal = parseFloat(item.subtotal);
+            total += subtotal;
+
+            let listItem = document.createElement('li');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            
+            // Mostrar el nombre de presentación amigable
+            let presentacionTexto = '';
+            switch(item.presentacion) {
+                case 'pieza':
+                    presentacionTexto = `${item.cantidad} pieza${item.cantidad > 1 ? 's' : ''}`;
+                    break;
+                case '700g':
+                    presentacionTexto = `${item.cantidad} paquete${item.cantidad > 1 ? 's' : ''} 700g`;
+                    break;
+                case '1kg':
+                    presentacionTexto = `${item.cantidad} paquete${item.cantidad > 1 ? 's' : ''} 1kg`;
+                    break;
+                case 'gramos':
+                    presentacionTexto = `${item.cantidad * 100}g`;
+                    break;
+                default:
+                    presentacionTexto = item.presentacion;
+            }
+            
+            listItem.innerHTML = `
+                <div>
+                    <strong>${item.nombre_galleta}</strong> (${presentacionTexto})<br>
+                    Precio unitario: $${parseFloat(item.precio_unitario).toFixed(2)} | Subtotal: $${subtotal.toFixed(2)}
+                </div>
+                <button class="btn btn-outline-danger btn-sm" 
+                        onclick="eliminarProducto('${item.nombre_galleta}', '${item.presentacion}')">
+                    ❌
+                </button>
+            `;
+            
+            lista.appendChild(listItem);
+        });
+
+        document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
+        
+        // Actualizar el monto recibido sugerido
+        document.getElementById('monto_recibido').value = total.toFixed(2);
+        
+    } catch (error) {
+        console.error('Error en actualizarCarrito:', error);
+    }
+}
+    
+    // Función para eliminar producto
+async function eliminarProducto(nombreGalleta, presentacion) {
+        const errorDisplay = document.getElementById("error-display");
+        errorDisplay.style.display = "none";
+        
+        try {
+            let csrfToken = document.getElementById("csrf_token").value;
+    
+            let response = await fetch("/ventas/eliminar_producto", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                },
+                body: JSON.stringify({ 
+                    nombre_galleta: nombreGalleta, 
+                    presentacion: presentacion 
+                })
+            });
+    
+            let data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || "Error al eliminar producto");
+            }
+    
+            actualizarCarrito();
+        } catch (error) {
+            errorDisplay.textContent = error.message;
+            errorDisplay.style.display = "block";
+            console.error("Error en eliminarProducto:", error);
+        }
+}
+    
+    // Función para guardar venta
+    async function guardarVenta(imprimirTicket) {
+    const errorDisplay = document.getElementById("error-display");
+    errorDisplay.style.display = "none";
+    
+    try {
+        let montoRecibido = parseFloat(document.getElementById("monto_recibido").value);
+        let csrfToken = document.getElementById("csrf_token").value;
+
+        if (isNaN(montoRecibido)) {
+            throw new Error("Ingrese un monto válido");
+        }
+
+        let response = await fetch("/ventas/guardar_venta", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({
+                monto_recibido: montoRecibido.toFixed(2),
+                imprimir_ticket: imprimirTicket
+            })
+        });
+
+        let data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || "Error al procesar venta");
+        }
+
+        // Limpiar y mostrar mensaje de éxito
+        actualizarCarrito();
+        document.getElementById("monto_recibido").value = "";
+        
+        errorDisplay.className = "alert alert-success";
+        errorDisplay.textContent = `✅ Venta guardada. Cambio: $${parseFloat(data.cambio).toFixed(2)}`;
+        errorDisplay.style.display = "block";
+        
+        setTimeout(() => {
+            errorDisplay.className = "alert alert-danger";
+            errorDisplay.style.display = "none";
+        }, 5000);
+
+        // Si se solicitó imprimir ticket
+        if (imprimirTicket && data.venta_id) {
+            imprimirTicketVenta(data.venta_id);
+        }
+
+    } catch (error) {
+        errorDisplay.textContent = `❌ ${error.message}`;
+        errorDisplay.style.display = "block";
+        console.error("Error en guardarVenta:", error);
+    }
+}
+
+function imprimirTicketVenta(ventaId) {
+    // Abrir una nueva ventana con el ticket
+    const url = `/ventas/ticket/${ventaId}`;
+    const ventanaTicket = window.open(url, '_blank');
+    
+    // Esperar a que se cargue el contenido antes de imprimir
+    ventanaTicket.onload = function() {
+        setTimeout(() => {
+            ventanaTicket.print();
+        }, 500);
+    };
+}
+    
+document.addEventListener('DOMContentLoaded', actualizarCarrito);
+
+</script>
+<style>
+    #presentacion option {
+        padding: 5px;
+    }
+    #carrito .list-group-item {
+        transition: all 0.3s ease;
+    }
+    #carrito .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+    #monto_recibido {
+        font-weight: bold;
+    }
+</style>
+
+{% endblock %}

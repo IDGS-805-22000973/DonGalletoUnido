@@ -1,0 +1,73 @@
+{% extends "layoutCocinero.html" %}
+{% block container %}
+
+
+<div class="container py-5">
+    <h2 class="text-center mb-4">Agregar Nueva Receta de Galletas</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form action="{{ url_for('chefCocinero.agregar_receta') }}" method="POST">
+                        {{form.csrf_token}}
+                        <div class="mb-3">
+                            <label for="nombreReceta" class="form-label">Nombre de la Receta:</label>
+                            <input type="text" class="form-control" id="nombreReceta" name="nombreReceta" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción:</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3"
+                                required></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cantidadGalletaProducida" class="form-label">Cantidad de Galletas
+                                    Producidas:</label>
+                                <input type="number" class="form-control" id="cantidadGalletaProducida"
+                                    name="cantidadGalletaProducida" min="1" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="diasCaducidad" class="form-label">Días de Caducidad:</label>
+                                <input type="number" class="form-control" id="diasCaducidad" name="diasCaducidad"
+                                    min="1" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ingredienteEspecial" class="form-label">Ingrediente Especial:</label>
+                            <input type="text" class="form-control" id="ingredienteEspecial" name="ingredienteEspecial"
+                                required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cantidadNecesaria" class="form-label">Cantidad Necesaria (por ingrediente en
+                                gramos):</label>
+                            <div class="form-row">
+                                {% for mp in materias_primas %}
+                                <div class="col-md-4 mb-3">
+                                    <label for="MateriaPrima{{ mp.id }}" class="form-label">{{ mp.nombre }}</label>
+                                    <input type="number" class="form-control" id="MateriaPrima{{ mp.id }}"
+                                        name="cantidadNecesaria[{{ mp.id }}]" min="0" step="0.01">
+                                </div>
+                                {% else %}
+                                <p>No se encontraron materias primas disponibles.</p>
+                                {% endfor %}
+
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Agregar Receta
+                        <a href="{{ url_for('chefCocinero.agregar_receta') }}">
+                            <i class="mdi mdi-food-croissant"></i><span></span>
+                        </a>
+                    </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

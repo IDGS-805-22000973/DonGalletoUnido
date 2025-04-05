@@ -1,0 +1,415 @@
+<!-- corte.html (HTML template) -->
+{% extends "layoutVentas.html" %}
+{% block container %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h3><i class="fas fa-chart-bar"></i> Corte de Ventas</h3>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <label class="form-label">Tipo de Corte</label>
+                <select id="tipo_corte" class="form-select">
+                    <option value="dia">Día</option>
+                    <option value="semana">Semana</option>
+                    <option value="mes">Mes</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha</label>
+                <input type="date" id="fecha_corte" class="form-control">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100" onclick="generarCorte()">
+                    <i class="fas fa-sync-alt"></i> Generar Corte
+                </button>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-success w-100" id="btnExportar" disabled onclick="exportarExcel()">
+                    <i class="fas fa-file-excel"></i> Exportar a Excel
+                </button>
+            </div>
+        </div>
+
+        <div id="loading" class="text-center my-4" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p>Generando reporte...</p>
+        </div>
+
+        <div id="resultado_corte">
+            <div class="alert alert-info">
+                Seleccione los parámetros y haga clic en "Generar Corte"
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+<script>
+// Variable global para almacenar los datos del corte
+let datosCorteActual = null;
+
+// Función para generar el corte
+async function generarCorte() {
+    const loading = document.getElementById('loading');
+    const resultado = document.getElementById('resultado_corte');
+    const btnExportar = document.getElementById('btnExportar');
+    
+    loading.style.display = 'block';
+    resultado.innerHTML = '';
+    btnExportar.disabled = true;
+    
+    try {
+        const tipo = document.getElementById('tipo_corte').value;
+        const fecha = document.getElementById('fecha_corte').value;
+        
+        const response = await fetch(`/ventas/generar_corte?tipo=${tipo}&fecha=${fecha}`);
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+
+        // Guardar datos para exportar
+        datosCorteActual = data;
+        btnExportar.disabled = false;
+        
+        renderCorte(data);
+        
+    } catch (error) {
+        showError("Error al generar el corte: " + error.message);
+        console.error(error);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// Función para renderizar los resultados del corte
+function renderCorte(data) {
+    const resultado = document.getElementById('resultado_corte');
+    
+    const formatMoney = (value) => {
+        const num = parseFloat(value) || 0;
+        return num.toFixed(2);
+    };
+
+    let html = `
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h4><i class="far fa-calendar-alt"></i> Corte del ${data.fecha_inicio} al ${data.fecha_fin}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Total Ventas</h6>
+                                <h3 class="text-primary">$${formatMoney(data.total_ventas)}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Ganancias</h6>
+                                <h3 class="text-success">$${formatMoney(data.total_ganancias)}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">N° de Ventas</h6>
+                                <h3 class="text-info">${data.num_ventas}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Margen</h6>
+                                <h3 class="text-warning">${(data.total_ganancias / data.total_ventas * 100 || 0).toFixed(2)}%</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    // Gráfica de presentaciones más vendidas
+    html += `
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5><i class="fas fa-boxes"></i> Presentaciones Más Vendidas</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficaPresentaciones" height="200"></canvas>
+                <div class="mt-3">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Presentación</th>
+                                <th>Veces Vendida</th>
+                                <th>Cantidad Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+    
+    data.presentaciones_mas_vendidas.forEach(p => {
+        html += `
+            <tr>
+                <td>${p.presentacion}</td>
+                <td>${p.repeticiones}</td>
+                <td>${p.cantidad_total}</td>
+            </tr>`;
+    });
+    
+    html += `</tbody></table></div></div></div>`;
+
+    // Gráfica de galletas más vendidas
+    html += `
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5><i class="fas fa-cookie"></i> Galletas Más Vendidas</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficaGalletas" height="200"></canvas>
+                <div class="mt-3">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Galleta</th>
+                                <th>Cantidad</th>
+                                <th>Total Ventas</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+    
+    data.galletas_mas_vendidas.forEach(g => {
+        html += `
+            <tr>
+                <td>${g.nombre}</td>
+                <td>${g.total_descontado}</td>
+                <td>$${formatMoney(g.total_venta)}</td>
+            </tr>`;
+    });
+    
+    html += `</tbody></table></div></div></div>`;
+
+    // Detalle de ventas
+    html += `
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5><i class="fas fa-receipt"></i> Detalle de Ventas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha/Hora</th>
+                                <th>Total</th>
+                                <th>Ganancia</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+    
+    data.detalle_ventas.forEach(venta => {
+        html += `
+            <tr>
+                <td>${venta.id}</td>
+                <td>${venta.fecha}</td>
+                <td>$${formatMoney(venta.total)}</td>
+                <td>$${formatMoney(venta.ganancia)}</td>
+            </tr>`;
+    });
+    
+    html += `</tbody></table></div></div></div>`;
+    
+    resultado.innerHTML = html;
+
+    // Crear gráficas después de que el HTML se haya renderizado
+    setTimeout(() => {
+        crearGraficaPresentaciones({
+            labels: data.presentaciones_mas_vendidas.map(p => p.presentacion),
+            data: data.presentaciones_mas_vendidas.map(p => p.repeticiones),
+            cantidades: data.presentaciones_mas_vendidas.map(p => p.cantidad_total)
+        });
+        
+        crearGraficaGalletas({
+            labels: data.galletas_mas_vendidas.map(g => g.nombre),
+            data: data.galletas_mas_vendidas.map(g => g.total_descontado),
+            ventas: data.galletas_mas_vendidas.map(g => g.total_venta)
+        });
+    }, 100);
+}
+
+// Función para exportar a Excel
+function exportarExcel() {
+    if (!datosCorteActual) {
+        showError("No hay datos para exportar");
+        return;
+    }
+
+    try {
+        const wb = XLSX.utils.book_new();
+        
+        // Hoja 1: Resumen
+        const resumenData = [
+            ["Corte de Ventas", "", "", ""],
+            ["Desde:", datosCorteActual.fecha_inicio, "Hasta:", datosCorteActual.fecha_fin],
+            ["Total Ventas:", `$${datosCorteActual.total_ventas.toFixed(2)}`, "Total Ganancias:", `$${datosCorteActual.total_ganancias.toFixed(2)}`],
+            ["Número de Ventas:", datosCorteActual.num_ventas, "Margen:", `${(datosCorteActual.total_ganancias / datosCorteActual.total_ventas * 100 || 0).toFixed(2)}%`],
+            [],
+            ["Presentaciones Más Vendidas", "Repeticiones", "Cantidad Total"],
+            ...datosCorteActual.presentaciones_mas_vendidas.map(p => [
+                p.presentacion, p.repeticiones, p.cantidad_total
+            ]),
+            [],
+            ["Galletas Más Vendidas", "Cantidad Descontada", "Total Ventas"],
+            ...datosCorteActual.galletas_mas_vendidas.map(g => [
+                g.nombre, g.total_descontado, `$${g.total_venta.toFixed(2)}`
+            ])
+        ];
+        
+        const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+        XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen");
+        
+        // Hoja 2: Detalle de Ventas
+        const detalleData = [
+            ["ID Venta", "Fecha/Hora", "Total", "Ganancia"],
+            ...datosCorteActual.detalle_ventas.map(v => [
+                v.id, v.fecha, `$${v.total.toFixed(2)}`, `$${v.ganancia.toFixed(2)}`
+            ])
+        ];
+        
+        const wsDetalle = XLSX.utils.aoa_to_sheet(detalleData);
+        XLSX.utils.book_append_sheet(wb, wsDetalle, "Detalle Ventas");
+        
+        const fechaReporte = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `Corte_Ventas_${fechaReporte}.xlsx`);
+        
+    } catch (error) {
+        showError("Error al exportar a Excel: " + error.message);
+        console.error(error);
+    }
+}
+
+// Función para crear gráfica de presentaciones
+function crearGraficaPresentaciones(datos) {
+    const ctx = document.getElementById('graficaPresentaciones').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: datos.labels,
+            datasets: [{
+                label: 'Veces vendida',
+                data: datos.data,
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const index = context.dataIndex;
+                            return `Cantidad total: ${datos.cantidades[index]}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Número de veces vendida'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tipo de presentación'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Función para crear gráfica de galletas
+function crearGraficaGalletas(datos) {
+    const ctx = document.getElementById('graficaGalletas').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: datos.labels,
+            datasets: [{
+                label: 'Cantidad descontada',
+                data: datos.data,
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const index = context.dataIndex;
+                            return `Total ventas: $${datos.ventas[index].toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Total de galletas vendidas'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tipos de galletas'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Función para mostrar errores
+function showError(message) {
+    const resultado = document.getElementById('resultado_corte');
+    resultado.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i> ${message}
+        </div>`;
+}
+
+// Cargar fecha actual al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('fecha_corte').valueAsDate = new Date();
+});
+</script>
+
+{% endblock %}

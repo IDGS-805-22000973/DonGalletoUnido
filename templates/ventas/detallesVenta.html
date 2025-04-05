@@ -1,0 +1,62 @@
+{% extends "layoutVentas.html" %}
+
+{% block container %}
+
+<div class="card">
+    <div class="card-header">
+        <h3>Detalles de Venta</h3>
+    </div>
+    <div class="card-body">
+        <h5>ID Venta: <span id="id_venta"></span></h5>
+        <h5>Fecha: <span id="fecha_venta"></span></h5>
+        <h5>Total: $<span id="total_venta"></span></h5>
+        
+        <h4>Productos:</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Cantidad</th>
+                    <th>Presentación</th>
+                    <th>Galleta</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody id="detalle_venta">
+                <!-- Aquí se insertarán los productos de la venta -->
+            </tbody>
+        </table>
+        <a href="/ventas" class="btn btn-secondary">Volver</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async function() {
+    let ventaId = window.location.pathname.split("/").pop();
+    let response = await fetch(`/ventas/detalles/${ventaId}`);
+    let venta = await response.json();
+
+    if (venta.error) {
+        alert(venta.error);
+        return;
+    }
+
+    document.getElementById("id_venta").textContent = venta.id;
+    document.getElementById("fecha_venta").textContent = venta.fecha;
+    document.getElementById("total_venta").textContent = venta.total.toFixed(2);
+    
+    let tbody = document.getElementById("detalle_venta");
+    tbody.innerHTML = "";
+    
+    venta.detalles.forEach(d => {
+        let row = `<tr>
+            <td>${d.cantidad}</td>
+            <td></td>
+            <td>${d.galleta}</td>
+            <td>$${d.subtotal.toFixed(2)}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+    });
+});
+</script>
+
+{% endblock %}

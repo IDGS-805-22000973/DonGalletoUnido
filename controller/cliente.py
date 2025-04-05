@@ -52,6 +52,13 @@ def menuCliente():
                 cantidad = Decimal(request.form.get(f"cantidad_{galleta_id}", '0'))
                 
                 if cantidad > Decimal('0'):
+
+                    #Validación específica para presentación en gramos
+                    if presentacion == 'gramos' and cantidad % 100 != 0:
+                        flash(f'La cantidad para {galleta.nombre} debe ser múltiplo de 100g.', 'error')
+                        db.session.rollback()
+                        return redirect(url_for('cliente.menuCliente'))
+                        
                     # Calcular unidades equivalentes
                     factor = Decimal(str(PRESENTACIONES[presentacion]['factor']))
                     unidades = cantidad * factor

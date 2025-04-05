@@ -1,0 +1,7 @@
+body {
+    background-image: url('../img/GalletasFondo.jpg'); /* Imagen de fondo */
+    background-size: cover; /* Cubre todo el espacio sin deformarse */
+    background-position: center; /* Centra la imagen */
+    background-repeat: no-repeat; /* Evita que se repita */
+    background-attachment: fixed; /* Opcional: fija el fondo al desplazarse */
+}

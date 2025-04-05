@@ -1,0 +1,38 @@
+{% extends "layout2.html" %}
+{% block container %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">Configurar Autenticación en Dos Pasos</div>
+
+                <div class="card-body">
+                    <p>Para configurar la autenticación en dos pasos, sigue estos pasos:</p>
+                    
+                    <ol>
+                        <li>Instala una aplicación de autenticación como Google Authenticator, Authy o Microsoft Authenticator</li>
+                        <li>Escanea el código QR o introduce la clave manual</li>
+                        <li>Ingresa el código de verificación de 6 dígitos generado por la app</li>
+                    </ol>
+                    
+                    <div class="text-center my-4">
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="Código QR para 2FA" class="img-fluid">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>Clave manual:</strong> {{ manual_key }}
+                        <br>
+                        <small>Si no puedes escanear el QR, introduce esta clave manualmente en tu app</small>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('auth.setup_2fa') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary">He configurado mi app, activar 2FA</button>
+                        <a href="{{ url_for('auth.account_settings') }}" class="btn btn-secondary">Cancelar Autenticación en Dos Pasos</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

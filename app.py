@@ -17,10 +17,20 @@ from controller.cliente import cliente_bp
 app = Flask(__name__)
 app.config.from_object(DevelopmentConfig)
 
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
 # Inicializar extenciones
 csrf=CSRFProtect()
 csrf.init_app(app)
 db.init_app(app)
+
+# Configuración de reCAPTCHA (usa tus claves)
+app.config['RECAPTCHA_PUBLIC_KEY'] = '6LeW3QcrAAAAAN6aYMJ6ug29890dvzk9VaPlym_2'  # Clave de sitio
+app.config['RECAPTCHA_PRIVATE_KEY'] = '6LeW3QcrAAAAAMscJqqTBNWb-LJRpbh-FIc0ftTc'  # Clave secreta
+app.config['RECAPTCHA_PARAMETERS'] = {'hl': 'es'}  # Opcional: idioma español
 
 
 # Registrar Blueprints

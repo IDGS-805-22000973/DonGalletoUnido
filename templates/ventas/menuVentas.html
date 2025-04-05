@@ -1,20 +1,10 @@
-{% extends "layout2.html" %}
+{% extends "layoutVentas.html" %}
 {% block container %}
 
 <div class="container py-4">
     <h2 class="text-center mb-4">Gestión de Pedidos - Ventas</h2>
-    
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} mb-4">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    
-    <div class="table-responsive">
+    <div class="table-responsive" style="margin-left: 50px;">  <!-- Ajusta el valor en píxeles -->
+
         <table class="table table-striped">
             <thead class="table-dark">
                 <tr>

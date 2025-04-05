@@ -27,18 +27,17 @@
             <h4>DeliCookie</h4>
         </div>
 
-        <a href="{{ url_for('chefCocinero.getAll_receta') }}"><i class="bi bi-menu-down"></i><span>Agregar Receta</span></a>
+        <a href="{{ url_for('ventas.indexVentas') }}"><i class="mdi mdi-menu"></i><span>Ventas</span></a>
+        <a href="{{url_for('ventas.listaVentas')}}"><i class="mdi mdi-menu"></i><span>Listado Ventas</span></a>
+        <a href="{{url_for('ventas.corte')}}"><i class="mdi mdi-menu"></i><span>Corte</span></a>
 
-        <a href="{{ url_for('chefCocinero.produccion') }}">
-            <i class="mdi mdi-food-croissant"></i><span>Producción</span>
+        <a href="{{ url_for('ventas.menuVentas') }}">
+            <i class="bi bi-cart-check"></i><span>Gestion de Pedidos</span>
         </a>
 
-        <a href="{{ url_for('chefCocinero.inventario') }}">
-            <i class="mdi mdi-cookie"></i><span>Inventario Galletas</span></a>
         <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i>
             Salir</a>
     </div>
-
 
 
     <div class="content">

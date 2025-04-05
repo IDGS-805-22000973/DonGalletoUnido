@@ -1,11 +1,18 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from models.models import db, Usuarios, Galleta, Pedido, DetallePedido, Venta, DetalleVenta
 from werkzeug.security import check_password_hash, generate_password_hash
-from models.formsLogin import LoginForm, RegistrarClientesForm
+from models.formsLogin import LoginForm, RegistrarClientesForm, TwoFactorForm
 from datetime import timedelta
 from functools import wraps
+import pyotp
+import qrcode
+import io
+import base64
 
 auth_bp = Blueprint('auth', __name__)
+
+# Configuración de 2FA
+TOTP_ISSUER = "Panadería Dulce Tentación"
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -23,35 +30,80 @@ def login():
         elif not check_password_hash(usuario.password, password):
             flash('Credenciales incorrectas', 'error')
         else:
-            session['user_id'] = usuario.id
-            session['user_rol'] = usuario.rol
-            session['user_nombre'] = usuario.nombre
+            # Guardar usuario en sesión temporal para 2FA
+            session['temp_user_id'] = usuario.id
+            session['temp_remember'] = remember
             
-            if remember:
-                session.permanent = True
-                # Configurar duración de la sesión (30 días)
-                auth_bp.permanent_session_lifetime = timedelta(days=30)
+            # Si tiene 2FA activado, redirigir a verificación
+            if usuario.two_factor_enabled:
+                return redirect(url_for('auth.verify_2fa'))
             
-            if usuario.rol == 'Admin':
-                return redirect(url_for('admin.menuAdmin'))
-            elif usuario.rol == 'Ventas':
-                return redirect(url_for('ventas.menuVentas'))
-            elif usuario.rol == 'Cocina':
-                return redirect(url_for('chefCocinero.inventario'))
-            elif usuario.rol == 'Cliente':
-                return redirect(url_for('cliente.menuCliente'))
+            # Si no tiene 2FA, continuar con login normal
+            return complete_login(usuario, remember)
             
         return redirect(url_for('auth.login'))
     
     return render_template('login/login.html', form=form)
+
+@auth_bp.route('/verify-2fa', methods=['GET', 'POST'])
+def verify_2fa():
+    # Verificar que el usuario está en proceso de login
+    if 'temp_user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    usuario = Usuarios.query.get(session['temp_user_id'])
+    if not usuario:
+        return redirect(url_for('auth.login'))
+    
+    form = TwoFactorForm()
+    
+    if form.validate_on_submit():
+        # Verificar el código
+        if verify_totp(usuario.two_factor_secret, form.verification_code.data):
+            remember = session.get('temp_remember', False)
+            return complete_login(usuario, remember)
+        else:
+            flash('Código de verificación incorrecto', 'error')
+    
+    return render_template('login/verify_2fa.html', form=form)
+
+def verify_totp(secret, code):
+    """Verifica un código TOTP contra el secreto"""
+    if not secret or not code:
+        return False
+    try:
+        totp = pyotp.TOTP(secret)
+        return totp.verify(code)
+    except:
+        return False
+
+def complete_login(usuario, remember):
+    """Función para completar el login después de 2FA"""
+    session.pop('temp_user_id', None)
+    session.pop('temp_remember', None)
+    
+    session['user_id'] = usuario.id
+    session['user_rol'] = usuario.rol
+    session['user_nombre'] = usuario.nombre
+    
+    if remember:
+        session.permanent = True
+        auth_bp.permanent_session_lifetime = timedelta(days=30)
+    
+    if usuario.rol == 'Admin':
+        return redirect(url_for('admin.ABCempleados'))
+    elif usuario.rol == 'Ventas':
+        return redirect(url_for('ventas.menuVentas'))
+    elif usuario.rol == 'Cocina':
+        return redirect(url_for('chefCocinero.inventario'))
+    elif usuario.rol == 'Cliente':
+        return redirect(url_for('cliente.menuCliente'))
 
 @auth_bp.route('/logout')
 def logout():
     session.clear()
     flash('Has cerrado sesión correctamente', 'success')
     return redirect(url_for('auth.login'))
-
-
 
 @auth_bp.route("/registrarClientes", methods=['GET', 'POST'])
 def registrarClientes():
@@ -76,7 +128,9 @@ def registrarClientes():
                 telefono=form.telefono.data.strip(),
                 direccion=form.direccion.data.strip(),
                 rol=form.rol.data,
-                fechaRegistro=form.fechaRegistro.data
+                fechaRegistro=form.fechaRegistro.data,
+                two_factor_secret=pyotp.random_base32(),  # Generar secreto para 2FA
+                two_factor_enabled=False  # Por defecto desactivado
             )
             
             db.session.add(nuevo_usuario)
@@ -99,7 +153,17 @@ def registrarClientes():
     return render_template('login/registrarClientes.html', form=form)
 
 
-# Decorador para Admin
+
+# Decorador para verificar que la autenticación en dos pasos esté activada
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash("Por favor inicia sesión para acceder a esta página", "danger")
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -109,7 +173,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Decorador para Ventas
 def ventas_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -119,7 +182,6 @@ def ventas_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Decorador para Cocina
 def cocina_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -129,7 +191,6 @@ def cocina_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Decorador para Cliente
 def cliente_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -138,3 +199,57 @@ def cliente_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+
+@auth_bp.route('/setup-2fa', methods=['GET', 'POST'])
+@login_required
+def setup_2fa():
+    usuario = Usuarios.query.get(session['user_id'])
+    
+    if request.method == 'POST':
+        # Activar 2FA
+        usuario.two_factor_enabled = True
+        db.session.commit()
+        flash('Autenticación en dos pasos activada correctamente', 'success')
+        return redirect(url_for('auth.account_settings'))
+    
+    # Generar URI de configuración
+    if not usuario.two_factor_secret:
+        usuario.two_factor_secret = pyotp.random_base32()
+        db.session.commit()
+    
+    totp = pyotp.TOTP(usuario.two_factor_secret)
+    provisioning_uri = totp.provisioning_uri(
+        name=usuario.email,
+        issuer_name=TOTP_ISSUER
+    )
+    
+    # Generar QR code
+    img = qrcode.make(provisioning_uri)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    qr_code = base64.b64encode(buf.getvalue()).decode("ascii")
+    
+    # Mostrar clave manual también
+    manual_key = ' '.join([usuario.two_factor_secret[i:i+4] for i in range(0, len(usuario.two_factor_secret), 4)])
+    
+    return render_template('login/setup_2fa.html', 
+                         qr_code=qr_code,
+                         manual_key=manual_key,
+                         provisioning_uri=provisioning_uri)
+
+@auth_bp.route('/disable-2fa', methods=['POST'])
+@login_required
+def disable_2fa():
+    usuario = Usuarios.query.get(session['user_id'])
+    usuario.two_factor_enabled = False
+    db.session.commit()
+    flash('Autenticación en dos pasos desactivada', 'success')
+    return redirect(url_for('auth.account_settings'))
+
+@auth_bp.route('/account/settings')
+@login_required
+def account_settings():
+    usuario = Usuarios.query.get(session['user_id'])
+    return render_template('account/settings.html', usuario=usuario)
+
+

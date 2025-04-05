@@ -1,0 +1,132 @@
+:root {
+    --color-crema: #E8CFC1;
+    --color-oro: #A87008;
+    --color-naranja: #D67747;
+    --color-marron-medio: #6B553D;
+    --color-marron-oscuro: #3A2812;
+}
+
+body {
+    background-image: url('../img/GalletasFondo.jpg'); /* Imagen de fondo */
+    background-size: cover; /* Cubre todo el espacio sin deformarse */
+    background-position: center; /* Centra la imagen */
+    background-repeat: no-repeat; /* Evita que se repita */
+    background-attachment: fixed; /* Opcional: fija el fondo al desplazarse */
+}
+
+.card {
+    border-radius: 15px;
+    border: 1px solid var(--color-marron-medio);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: var(--color-marron-oscuro);
+    color: white;
+    border-bottom: 2px solid var(--color-oro);
+    font-family: 'Montserrat', sans-serif;
+}
+
+.card-header h5 {
+    font-weight: 600;
+    margin: 0;
+}
+
+.card-body {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+thead {
+    background-color: var(--color-marron-oscuro);
+    color: white;
+}
+
+th {
+    font-weight: 500;
+}
+
+tbody tr:nth-child(even) {
+    background-color: rgba(232, 207, 193, 0.3);
+}
+
+tbody tr:hover {
+    background-color: rgba(214, 119, 71, 0.1);
+}
+
+.btn-volver {
+    background-color: var(--color-marron-oscuro);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-volver:hover {
+    background-color: var(--color-naranja);
+    transform: translateY(-2px);
+}
+
+.info-label {
+    color: var(--color-marron-oscuro);
+    font-weight: 600;
+    min-width: 150px;
+    display: inline-block;
+}
+
+.info-value {
+    color: var(--color-marron-medio);
+}
+
+.titulo-pedido {
+    color: var(--color-marron-oscuro);
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(232, 207, 193, 0.5);
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.titulo-pedido::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: var(--color-naranja);
+}
+
+.badge-estado {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.estado-pendiente {
+    background-color: #FFF3CD;
+    color: #856404;
+}
+
+.estado-proceso {
+    background-color: #D1ECF1;
+    color: #0C5460;
+}
+
+.estado-completado {
+    background-color: #D4EDDA;
+    color: #155724;
+}
+
+.estado-cancelado {
+    background-color: #F8D7DA;
+    color: #721C24;
+}

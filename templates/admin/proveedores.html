@@ -1,0 +1,98 @@
+{% extends "admin/layoutAdmin.html" %}
+
+{% block container %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/FondoGalletas.css') }}">
+<br>
+<div class="container mt-4">
+    <h2 class="text-center">Gestión de Proveedores</h2>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 id="form-title">Agregar Proveedor</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.proveedores') }}">
+                        {{ form.hidden_tag() }}
+                        <input type="hidden" id="id" name="id">
+
+                        <div class="mb-3">
+                            <label for="nombre_proveedor" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre_proveedor" name="nombre_proveedor" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="telefono" name="telefono" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="direccion" class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="direccion" name="direccion">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" id="submit-btn">Agregar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Lista de Proveedores</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Teléfono</th>
+                                    <th>Email</th>
+                                    <th>Dirección</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for proveedor in proveedores %}
+                                <tr>
+                                    <td>{{ proveedor.nombre_proveedor }}</td>
+                                    <td>{{ proveedor.telefono }}</td>
+                                    <td>{{ proveedor.email }}</td>
+                                    <td>{{ proveedor.direccion }}</td>
+                                    <td>
+                                        <button class="btn btn-warning btn-sm" onclick="editProveedor({{ proveedor.id }}, '{{ proveedor.nombre_proveedor }}', '{{ proveedor.telefono }}', '{{ proveedor.email }}', '{{ proveedor.direccion }}')">Editar</button>
+                                        <a href="{{ url_for('admin.eliminar_proveedor', id=proveedor.id) }}" class="btn btn-danger btn-sm">Eliminar</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function editProveedor(id, nombre, telefono, email, direccion) {
+    document.getElementById('id').value = id;
+    document.getElementById('nombre_proveedor').value = nombre;
+    document.getElementById('telefono').value = telefono;
+    document.getElementById('email').value = email;
+    document.getElementById('direccion').value = direccion;
+
+    document.getElementById('form-title').innerText = "Actualizar Proveedor";
+    document.getElementById('submit-btn').innerText = "Actualizar";
+}
+</script>
+{% endblock %}

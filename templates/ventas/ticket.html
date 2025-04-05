@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ticket de Venta</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            width: 80mm;
+            margin: 0 auto;
+            padding: 10px;
+            font-size: 13px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #000;
+        }
+        .header h3 {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        .header p {
+            margin: 3px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0;
+        }
+        table td {
+            padding: 3px 0;
+        }
+        .product-name {
+            width: 60%;
+        }
+        .product-price {
+            text-align: right;
+            width: 40%;
+        }
+        .total {
+            margin-top: 10px;
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+            font-weight: bold;
+        }
+        .total-row td {
+            padding-top: 5px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 11px;
+            border-top: 1px dashed #000;
+            padding-top: 10px;
+        }
+        @media print {
+            @page {
+                size: 80mm auto;
+                margin: 0;
+            }
+            body {
+                width: 80mm;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h3>Galleteria DeliCookie</h3>
+        <p>Calle Principal #123, Ciudad de Leon Guanajuato</p>
+        <p>Tel: 555-123-4567</p>
+        <p>Ticket #{{ venta.id }}</p>
+        <p>{{ fecha }}</p>
+        <p>Atendido por: {{ venta.usuario.nombre if venta.usuario else 'Sistema' }}</p>
+    </div>
+    
+    <table>
+        <tbody>
+            {% for item in detalles %}
+            <tr>
+                <td class="product-name">
+                    {{ item.cantidad }} x {{ item.nombre }}<br>
+                    <small>{{ item.presentacion }}</small>
+                </td>
+                <td class="product-price">
+                    ${{ "%.2f"|format(item.subtotal) }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <table class="total">
+        <tr>
+            <td>Subtotal:</td>
+            <td class="text-right">${{ "%.2f"|format(venta.total) }}</td>
+        </tr>
+        <tr>
+            <td>Recibido:</td>
+            <td class="text-right">${{ "%.2f"|format(venta.monto_recibido) }}</td>
+        </tr>
+        <tr class="total-row">
+            <td>Cambio:</td>
+            <td class="text-right">${{ "%.2f"|format(venta.cambio) }}</td>
+        </tr>
+    </table>
+    
+    <div class="footer">
+        <p>¡Gracias por su compra!</p>
+        <p>Vuelva pronto</p>
+        <p>RFC: ABC123456XYZ</p>
+        <p>{{ "Fecha y hora: " + fecha }}</p>
+    </div>
+
+    <script>
+        // Imprimir automáticamente al cargar
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+                // Cerrar la ventana después de imprimir en 1 segundo
+                setTimeout(function() {
+                    window.close();
+                }, 1000);
+            }, 200);
+        };
+    </script>
+</body>
+</html>

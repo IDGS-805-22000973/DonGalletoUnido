@@ -14,6 +14,8 @@ class Usuarios(db.Model):
     direccion = db.Column(db.Text)
     rol = db.Column(db.Enum('Admin', 'Ventas', 'Cocina', 'Cliente'), nullable=False)
     fechaRegistro = db.Column(db.DateTime, default=datetime.utcnow)
+    two_factor_secret = db.Column(db.String(255))  # Almacena el secreto para 2FA
+    two_factor_enabled = db.Column(db.Boolean, default=False)  # Si tiene 2FA activado
 
 class Proveedor(db.Model):
     __tablename__ = 'proveedores'
@@ -136,6 +138,8 @@ class Venta(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     fecha_venta = db.Column(db.DateTime, default=datetime.utcnow)
     total = db.Column(db.Numeric(10,2), nullable=False)
+    costo_total = db.Column(db.Numeric(10,2), nullable=False)
+    ganancia = db.Column(db.Numeric(10,2), nullable=False)
     monto_recibido = db.Column(db.Numeric(10,2), nullable=False)
     cambio = db.Column(db.Numeric(10,2), nullable=False)
     
@@ -149,6 +153,7 @@ class DetalleVenta(db.Model):
     venta_id = db.Column(db.Integer, db.ForeignKey('ventas.id'), nullable=False)
     galleta_id = db.Column(db.Integer, db.ForeignKey('galletas.id'), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
+    galletas_descontadas = db.Column(db.Integer, nullable=False) #Nuevo campo
     precio_unitario = db.Column(db.Numeric(10,2), nullable=False)
     subtotal = db.Column(db.Numeric(10,2), nullable=False)
 

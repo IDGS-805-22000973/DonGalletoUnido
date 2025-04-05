@@ -1,0 +1,242 @@
+{% extends "layoutVentas.html" %}
+
+{% block container %}
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h4 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-cash-register me-2"></i>Historial de Ventas
+            </h4>
+            <div class="d-flex">
+                <input type="date" class="form-control me-2" id="fecha_ventas" style="max-width: 200px;">
+                <button class="btn btn-primary" onclick="listarVentas()">
+                    <i class="fas fa-search me-1"></i> Buscar
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="tablaVentas" width="100%" cellspacing="0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha/Hora</th>
+                            <th>Total</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista_ventas" class="align-middle">
+                        <!-- Las ventas se cargarán aquí -->
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" class="text-end fw-bold">Total del día:</td>
+                            <td id="totalDia" class="fw-bold">$0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalles de venta -->
+<div class="modal fade" id="modalDetalles" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-receipt me-2"></i>Detalles de Venta
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <p><strong>ID Venta:</strong> <span id="detalle-id"></span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>Fecha:</strong> <span id="detalle-fecha"></span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>Total:</strong> <span id="detalle-total" class="fw-bold"></span></p>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Presentación</th>
+                                <th class="text-end">Cantidad</th>
+                                <th class="text-end">P. Unitario</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detalle-productos">
+                            <!-- Los productos se cargarán aquí -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-end fw-bold">Total:</td>
+                                <td class="text-end fw-bold" id="detalle-total-footer"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title">Monto Recibido</h6>
+                                <h4 class="text-success" id="detalle-recibido"></h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6 class="card-title">Cambio</h6>
+                                <h4 class="text-info" id="detalle-cambio"></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="imprimirTicket()">
+                    <i class="fas fa-print me-1"></i> Imprimir Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variable para almacenar la venta actual
+let ventaActual = null;
+
+async function listarVentas() {
+    const fecha = document.getElementById("fecha_ventas").value;
+    const url = fecha ? `/ventas/listar_ventas?fecha=${fecha}` : '/ventas/listar_ventas';
+    
+    try {
+        const response = await fetch(url);
+        const ventas = await response.json();
+
+        if (ventas.error) {
+            mostrarAlerta('error', ventas.error);
+            return;
+        }
+
+        const tbody = document.getElementById("lista_ventas");
+        tbody.innerHTML = "";
+
+        let totalDia = 0;
+
+        ventas.forEach(venta => {
+            const total = parseFloat(venta.total) || 0;
+            
+            totalDia += total;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${venta.id}</td>
+                    <td>${venta.fecha}</td>
+                    <td class="text-end">$${total.toFixed(2)}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-info" onclick="verDetalles(${venta.id})" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>`;
+        });
+
+        // Actualizar totales
+        document.getElementById('totalDia').textContent = `$${totalDia.toFixed(2)}`;
+
+    } catch (error) {
+        console.error("Error en listarVentas:", error);
+        mostrarAlerta('error', 'Error al cargar las ventas');
+    }
+}
+
+async function verDetalles(idVenta) {
+    try {
+        const response = await fetch(`/ventas/detalles_venta/${idVenta}`);
+        ventaActual = await response.json();
+
+        if (ventaActual.error) {
+            mostrarAlerta('error', ventaActual.error);
+            return;
+        }
+
+        // Actualizar información básica
+        document.getElementById('detalle-id').textContent = ventaActual.id;
+        document.getElementById('detalle-fecha').textContent = ventaActual.fecha;
+        document.getElementById('detalle-total').textContent = `$${parseFloat(ventaActual.total).toFixed(2)}`;
+        document.getElementById('detalle-total-footer').textContent = `$${parseFloat(ventaActual.total).toFixed(2)}`;
+        document.getElementById('detalle-recibido').textContent = `$${parseFloat(ventaActual.monto_recibido || 0).toFixed(2)}`;
+        document.getElementById('detalle-cambio').textContent = `$${parseFloat(ventaActual.cambio || 0).toFixed(2)}`;
+
+        // Llenar tabla de productos
+        const tbody = document.getElementById("detalle-productos");
+        tbody.innerHTML = "";
+
+        ventaActual.detalles.forEach(detalle => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${detalle.galleta}</td>
+                    <td>${detalle.presentacion}</td>
+                    <td class="text-end">${detalle.cantidad}</td>
+                    <td class="text-end">$${parseFloat(detalle.precio_unitario).toFixed(2)}</td>
+                    <td class="text-end">$${parseFloat(detalle.subtotal).toFixed(2)}</td>
+                </tr>`;
+        });
+
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
+        modal.show();
+
+    } catch (error) {
+        console.error("Error en verDetalles:", error);
+        mostrarAlerta('error', 'Error al cargar los detalles');
+    }
+}
+
+function imprimirTicket() {
+    if (ventaActual) {
+        window.open(`/ventas/ticket/${ventaActual.id}`, '_blank');
+    }
+}
+
+function mostrarAlerta(tipo, mensaje) {
+    // Implementar función de alertas bonitas (Toast, SweetAlert, etc.)
+    alert(mensaje); // Temporal
+}
+
+// Cargar ventas del día actual al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha_ventas').value = hoy;
+    listarVentas();
+});
+</script>
+
+<style>
+    #tablaVentas th {
+        white-space: nowrap;
+    }
+    .card-header {
+        background-color: #f8f9fa;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+</style>
+
+{% endblock %}

@@ -1,6 +1,7 @@
 from wtforms import Form
+from flask_wtf.recaptcha import RecaptchaField
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Length, Email, Optional
 from wtforms import EmailField, DateField
 from wtforms import validators, ValidationError
@@ -17,7 +18,13 @@ class LoginForm(FlaskForm):
         Length(min=8, message='La contraseña debe tener al menos 8 caracteres')
     ])
     remember_me = BooleanField('Recordar sesión')
-
+# Añade este nuevo formulario
+class TwoFactorForm(FlaskForm):
+    verification_code = StringField('Código de verificación', validators=[
+        DataRequired(message='El código es requerido'),
+        Length(min=6, max=6, message='El código debe tener 6 dígitos')
+    ])
+    submit = SubmitField('Verificar')
 class RegistrarClientesForm(FlaskForm):
     nombre = StringField('Nombre', validators=[
         DataRequired(message="El nombre es obligatorio"),
@@ -50,3 +57,5 @@ class RegistrarClientesForm(FlaskForm):
     ], validators=[DataRequired(message="Seleccione un rol")])
     
     fechaRegistro = DateField('Fecha de registro', default=date.today, validators=[Optional()])
+
+    recaptcha = RecaptchaField('Verificación CAPTCHA')

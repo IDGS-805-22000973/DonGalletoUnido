@@ -1,0 +1,33 @@
+{% extends "layout2.html" %}
+{% block container %}
+<div class="container">
+    <h2>Configuración de Cuenta</h2>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Autenticación en Dos Pasos</h5>
+            
+            {% if usuario.two_factor_enabled %}
+                <div class="alert alert-success">
+                    La autenticación en dos pasos está <strong>activada</strong> para tu cuenta.
+                </div>
+                <form method="POST" action="{{ url_for('auth.disable_2fa') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Desactivar 2FA</button>
+                </form>
+            {% else %}
+                <div class="alert alert-warning">
+                    La autenticación en dos pasos está <strong>desactivada</strong>.
+                </div>
+                <a href="{{ url_for('auth.setup_2fa') }}" class="btn btn-primary">Activar 2FA</a>
+            {% endif %}
+            
+            <hr>
+            
+            <a href="{{ url_for('cliente.menuCliente') }}" class="btn btn-secondary mt-3">
+                Volver al menú principal
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

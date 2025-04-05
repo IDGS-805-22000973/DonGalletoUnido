@@ -1,53 +1,379 @@
-/* Importar la fuente Montserrat desde Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap');
+/* Fuentes y colores */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Dancing+Script:wght@700&family=Playfair+Display:wght@400;700&display=swap');
 
-body {
-    font-family: 'Montserrat', sans-serif;
-    background-color: #F8F4E3;
+:root {
+  --primary-color: #D4A76A;
+  --secondary-color: #8B5A2B;
+  --light-color: #FFF9F0;
+  --dark-color: #5A3921;
+  --accent-color: #E8C07D;
+  --text-color: #4A3A2A;
 }
 
-h2 {
-    font-weight: 600;
-    color: #333;
+/* Estructura principal */
+.conocenos-hero {
+  background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url('../img/GalletasFondo.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+  position: relative;
+  margin-bottom: 4rem;
 }
 
-.card {
-    border-radius: 10px;
-    transition: transform 0.3s ease-in-out;
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(212, 167, 106, 0.2) 0%, rgba(90, 57, 33, 0.6) 100%);
 }
 
-.card:hover {
-    transform: scale(1.03);
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  padding: 2rem;
+}
+
+.hero-title {
+  font-family: 'Dancing Script', cursive;
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hero-title span {
+  display: inline-block;
+}
+
+.divider {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
+}
+
+.hero-subtitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: 2rem;
+  letter-spacing: 1px;
+}
+
+/* Tarjetas */
+.about-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 15px 30px rgba(90, 57, 33, 0.1);
+  height: 100%;
+  transition: all 0.4s ease;
+  position: relative;
+  padding: 2.5rem;
+}
+
+.about-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(90, 57, 33, 0.15);
+}
+
+.card-icon {
+  font-size: 3rem;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
 }
 
 .card-title {
-    font-weight: 600;
-    color: #5a5a5a;
-    text-align: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: var(--secondary-color);
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-bottom: 0.5rem;
 }
 
-.card-text {
-    font-weight: 400;
-    color: #333;
-    text-align: justify;
+.card-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: var(--primary-color);
 }
 
-/* Centrar las tarjetas */
-.row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.card-content {
+  font-family: 'Montserrat', sans-serif;
+  color: var(--text-color);
+  line-height: 1.8;
+  font-size: 1.1rem;
 }
 
-.img-fluid {
-    max-width: 100%;
-    height: auto;
-    border-radius: 10px;
+/* Estilos específicos para cada tarjeta */
+.mission {
+  border-top: 5px solid #D4A76A;
 }
 
-h2 i, h2 svg {
-    font-size: 2rem; 
-    width: 22px; 
-    height: 22px;
-    vertical-align: middle; 
+.vision {
+  border-top: 5px solid #8B5A2B;
+}
+
+.values {
+  border-top: 5px solid #E8C07D;
+}
+
+.who-we-are {
+  border-top: 5px solid #5A3921;
+}
+
+/* Lista de valores */
+.values-list {
+  list-style: none;
+  padding: 0;
+}
+
+.values-list li {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.values-list i {
+  color: var(--primary-color);
+  margin-right: 1rem;
+  font-size: 1.2rem;
+}
+
+/* Sección de fundadores */
+.founders-image {
+  position: relative;
+  margin-bottom: 2rem;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.founders-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(90, 57, 33, 0.4), transparent);
+}
+
+.founders-text {
+  font-style: italic;
+  margin-bottom: 1.5rem;
+}
+
+.founders-quote {
+  background: var(--light-color);
+  padding: 1.5rem;
+  border-radius: 10px;
+  position: relative;
+}
+
+.founders-quote::before {
+  content: '"';
+  font-family: 'Playfair Display', serif;
+  font-size: 5rem;
+  color: var(--primary-color);
+  position: absolute;
+  top: -1rem;
+  left: 1rem;
+  opacity: 0.2;
+}
+
+blockquote {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--secondary-color);
+  font-weight: 500;
+}
+
+cite {
+  display: block;
+  margin-top: 1rem;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+/* Sección de testimonios */
+.testimonial-section {
+  background: linear-gradient(135deg, var(--light-color) 0%, #F5E9D9 100%);
+  padding: 5rem 0;
+  margin-top: 4rem;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  text-align: center;
+  font-size: 2.5rem;
+  color: var(--secondary-color);
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 3px;
+  background: var(--primary-color);
+}
+
+.testimonials-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.testimonial-card {
+  flex: 1 1 300px;
+  max-width: 400px;
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.testimonial-content {
+  position: relative;
+}
+
+.testimonial-content i {
+  font-size: 3rem;
+  color: var(--primary-color);
+  opacity: 0.2;
+  position: absolute;
+  top: -1rem;
+  left: -0.5rem;
+}
+
+.testimonial-content p {
+  font-style: italic;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.client-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.client-info img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-color);
+}
+
+.client-info h5 {
+  margin: 0;
+  color: var(--dark-color);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.client-info span {
+  font-size: 0.9rem;
+  color: var(--secondary-color);
+}
+
+/* Galletas flotantes */
+.floating-cookies {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+}
+
+.floating-cookies i {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  margin: 0 0.2rem;
+  opacity: 0.7;
+  animation: float 3s ease-in-out infinite;
+}
+
+.floating-cookies i:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.floating-cookies i:nth-child(3) {
+  animation-delay: 1s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Firma */
+.signature {
+  margin-top: 2rem;
+  text-align: right;
+}
+
+.signature img {
+  max-width: 150px;
+  opacity: 0.8;
+}
+
+/* Animaciones */
+.animate__animated {
+  animation-duration: 1s;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+    flex-direction: column;
+  }
+  
+  .divider {
+    display: none;
+  }
+  
+  .about-card {
+    padding: 1.5rem;
+  }
+  
+  .card-title {
+    font-size: 1.5rem;
+  }
 }

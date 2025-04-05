@@ -1,0 +1,75 @@
+:root {
+    --color-crema: #E8CFC1;
+    --color-oro: #A87008;
+    --color-naranja: #D67747;
+    --color-marron-medio: #6B553D;
+    --color-marron-oscuro: #3A2812;
+}
+
+body {
+    background-color: var(--color-crema);
+}
+
+.card {
+    border-radius: 15px;
+    border: 2px solid var(--color-marron-medio);
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: var(--color-marron-oscuro);
+    color: white;
+    border-bottom: 3px solid var(--color-oro);
+    font-family: 'Montserrat', sans-serif;
+}
+
+.btn-primary {
+    background-color: var(--color-naranja);
+    border-color: var(--color-naranja);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-marron-oscuro);
+    border-color: var(--color-marron-oscuro);
+}
+
+.btn-outline-secondary {
+    border-color: var(--color-marron-medio);
+    color: var(--color-marron-oscuro);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--color-marron-medio);
+    color: white;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid var(--color-marron-medio);
+}
+
+.form-control:focus {
+    border-color: var(--color-naranja);
+    box-shadow: 0 0 0 0.25rem rgba(214, 119, 71, 0.25);
+}
+
+.bg-light {
+    background-color: rgba(232, 207, 193, 0.3) !important;
+}
+
+.border {
+    border-color: var(--color-marron-medio) !important;
+}
+
+.text-muted {
+    color: var(--color-marron-medio) !important;
+}
+
+.fw-bold {
+    color: var(--color-marron-oscuro);
+}
+
+#cambio {
+    font-weight: bold;
+    color: var(--color-oro);
+}

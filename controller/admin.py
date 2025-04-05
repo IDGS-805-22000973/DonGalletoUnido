@@ -1,8 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from models.models import db, Usuarios, Galleta, Pedido, DetallePedido, Venta, DetalleVenta
+from models.models import db, Usuarios, Galleta, Pedido, DetallePedido, Venta, DetalleVenta, Proveedor, Merma, MateriaPrima
 from werkzeug.security import check_password_hash, generate_password_hash
 from models.formsAdmin import RegistrarEmpleadosForm, ModificarEmpleadosForm
 from controller.auth import admin_required
+from models.forms import ProveedorForm, mostrarMermasForm
+from models import forms  # Asegúrate de que forms.py tenga ProveedorForm
+
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -125,4 +128,62 @@ def eliminar(id):
         flash(f'Error al eliminar empleado: {str(e)}', 'error')
     return redirect(url_for('admin.ABCempleados'))
 
+
+@admin_bp.route('/proveedores', methods=['GET', 'POST'])
+@admin_required
+def proveedores():
+    form = forms.ProveedorForm(request.form)
+    proveedores = Proveedor.query.all()  # Obtener todos los proveedores
+
+    if request.method == 'POST' and form.validate():
+        if form.id.data:  # Si hay un ID, actualizamos el proveedor
+            proveedor = Proveedor.query.get(form.id.data)
+            if proveedor:
+                proveedor.nombre_proveedor = form.nombre_proveedor.data
+                proveedor.telefono = form.telefono.data
+                proveedor.email = form.email.data
+                proveedor.direccion = form.direccion.data
+                flash("Proveedor actualizado correctamente", "success")
+        else:  # Si no hay ID, creamos un nuevo proveedor
+            nuevo_proveedor = Proveedor(
+                nombre_proveedor=form.nombre_proveedor.data,
+                telefono=form.telefono.data,
+                email=form.email.data,
+                direccion=form.direccion.data
+            )
+            db.session.add(nuevo_proveedor)
+            flash("Proveedor agregado correctamente", "success")
+
+        db.session.commit()
+        return redirect(url_for('admin.proveedores'))
+
+    return render_template("admin/proveedores.html", form=form, proveedores=proveedores)
+# Función para eliminar proveedor
+@admin_bp.route('/proveedores/eliminar/<int:id>')
+def eliminar_proveedor(id):
+    proveedor = Proveedor.query.get(id)
+    if proveedor:
+        db.session.delete(proveedor)
+        db.session.commit()
+        flash("Proveedor eliminado correctamente", "success")
+
+    return redirect(url_for('admin.proveedores'))
+
+#Control de mermas 
+@admin_bp.route("/mostrarMermas", methods=['GET', 'POST'])
+@admin_required
+def mostrarMermas():
+    form = mostrarMermasForm(request.form)
+    
+    # Consulta para obtener todas las mermas con sus relaciones
+    mermas = db.session.query(
+        Merma,
+        MateriaPrima.nombre.label('nombre_materia_prima'),
+        Galleta.nombre.label('nombre_galleta'),
+        Usuarios.nombre.label('nombre_usuario')
+    ).outerjoin(MateriaPrima, Merma.materia_prima_id == MateriaPrima.id)\
+    .outerjoin(Galleta, Merma.galleta_id == Galleta.id)\
+    .join(Usuarios, Merma.usuario_id == Usuarios.id)\
+    .order_by(Merma.fecha_registro.desc()).all()
+    return render_template("admin/mostrarMermas.html", form=form, mermas=mermas)
 

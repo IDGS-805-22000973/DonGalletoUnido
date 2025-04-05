@@ -65,18 +65,27 @@
     </nav>
 
 
-    <div class="flex-col items-center justify-center min-h-screen">
-        {%with messages= get_flashed_messages() %}
-        {% if messages %}
-        {%for message in messages %}
-        <div class="alert alert-success">
-            {{message}}
+    <div class="d-flex flex-column min-vh-100">
+        <!-- Mensajes Flash centrados -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="d-flex justify-content-center">
+                    <div class="w-50">  <!-- Controla el ancho del mensaje -->
+                        {% for message in messages %}
+                            <div class="alert alert-success text-center mb-3">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Contenido principal -->
+        <div class="flex-grow-1">
+            {% block container %}
+            {% endblock %}
         </div>
-        {%endfor%}
-        {%endif%}
-        {%endwith%}
-        {%block container%}
-        {%endblock%}
     </div>
 
 

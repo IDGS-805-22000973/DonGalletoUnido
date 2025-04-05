@@ -1,0 +1,44 @@
+{% extends "admin/layoutAdmin.html" %}
+{% block container %}
+
+
+<br>
+<h2 style="text-align: center;">Mostrar Mermas</h2>
+<br>    
+<div class="container mt-3">
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover" style="text-align: center;">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Tipo</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Motivo</th>
+                    <th>Fecha Registro</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for merma, nombre_mp, nombre_galleta, nombre_usuario in mermas %}
+                <tr>
+                    <td>{{ merma.tipo }}</td>
+                    <td>
+                        {% if merma.tipo == 'Materia Prima' %}
+                            {{ nombre_mp }}
+                        {% else %}
+                            {{ nombre_galleta }}
+                        {% endif %}
+                    </td>
+                    <td>{{ "%.2f"|format(merma.cantidad) }}</td>
+                    <td>{{ merma.motivo }}</td>
+                    <td>{{ merma.fecha_registro.strftime('%d/%m/%Y') }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">No hay mermas registradas</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
