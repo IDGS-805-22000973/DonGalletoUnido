@@ -7,6 +7,12 @@ from flask_wtf.csrf import generate_csrf
 from werkzeug.exceptions import BadRequest
 from controller.auth import cocina_required
 from models.forms import GalletaForm, PedidoForm, MateriasPrimasForm, ActualizarInventarioForm, RecetaForm, IngredientesRecetasForm
+#otros
+from sqlalchemy.orm import joinedload
+from flask import jsonify, request, url_for
+from flask_login import current_user
+from datetime import datetime, timedelta
+from flask_wtf.csrf import generate_csrf
 
 chefCocinero = Blueprint('chefCocinero', __name__)
 
@@ -89,7 +95,7 @@ def actualizar_estado():
     except Exception as e:
         db.session.rollback()
         print(f"Error actualizando estado: {str(e)}")
-        return jsonify({"error": "Error interno", "detalle": str(e)}), 500
+        return jsonify({"error": "Error interno (guardar_estado)", "detalle": str(e)}), 500
     
         
     
@@ -97,30 +103,32 @@ def actualizar_estado():
 @cocina_required
 def guardar_cantidad():
     try:
-        # Verificar sesión primero
-        if 'user_id' not in session:
+        if current_user.is_anonymous:
             return jsonify({
                 "error": "No autenticado",
-                "detalle": "Debe iniciar sesión primero",
                 "redirect": url_for('auth.login')
             }), 401
 
         data = request.get_json()
-        id_galleta = int(data['idGalleta'])
-        hubo_merma = data.get('huboMerma', False)
-        cantidad_merma = float(data.get('cantidadMerma', 0))
-        motivo_merma = data.get('motivoMerma', '')
+        if not data or 'idGalleta' not in data:
+            return jsonify({"error": "Datos incompletos"}), 400
 
-        # Obtenemos el usuario_id directamente de la sesión
-        usuario_id = session['user_id']
+        try:
+            id_galleta = int(data['idGalleta'])
+            hubo_merma = bool(data.get('huboMerma', False))
+            cantidad_merma = float(data.get('cantidadMerma', 0))
+            motivo_merma = data.get('motivoMerma', '')
+        except (ValueError, TypeError) as e:
+            return jsonify({"error": "Datos inválidos", "detalle": str(e)}), 400
 
-        galleta = Galleta.query.get(id_galleta)
-        if not galleta:
-            return jsonify({"error": "Galleta no encontrada"}), 404
-        
+        # Cargar galleta con relaciones
+        galleta = Galleta.query.options(joinedload(Galleta.receta)).get(id_galleta)
+        if not galleta or not galleta.receta:
+            return jsonify({"error": "Galleta o receta no encontrada"}), 404
+
         cantidad_producida = galleta.receta.cantidad_galletas_producidas
         
-        # Validaciones
+        # Validaciones de merma
         motivos_permitidos = ['Caducidad', 'Producción', 'Dañado', 'Otro']
         if hubo_merma:
             if not motivo_merma or motivo_merma not in motivos_permitidos:
@@ -136,7 +144,7 @@ def guardar_cantidad():
                     "detalle": f"Merma: {cantidad_merma}, Producción: {cantidad_producida}"
                 }), 400
 
-        # Manejo de inventario
+        # Operaciones con la base de datos
         inventario = InventarioGalleta.query.filter_by(galleta_id=id_galleta, disponible=True).first()
         
         if not inventario:
@@ -152,19 +160,17 @@ def guardar_cantidad():
         else:
             inventario.stock += cantidad_producida
         
-        # Registrar merma si aplica
         if hubo_merma and cantidad_merma > 0:
             inventario.stock -= cantidad_merma
-            nueva_merma = Merma(
+            db.session.add(Merma(
                 tipo='Galleta Terminada',
                 galleta_id=id_galleta,
                 cantidad=cantidad_merma,
                 motivo=motivo_merma,
-                usuario_id=usuario_id
-            )
-            db.session.add(nueva_merma)
+                usuario_id=current_user.id
+            ))
 
-        # Resetear estado
+        # Actualizar estado
         estado = EstadoGalleta.query.filter_by(galleta_id=id_galleta).first()
         if estado:
             estado.estatus = "Pendiente"
@@ -172,16 +178,17 @@ def guardar_cantidad():
         db.session.commit()
         return jsonify({
             "message": f"Producción de {cantidad_producida} unidades registrada",
-            "merma": f"Merma registrada: {cantidad_merma} unidades" if hubo_merma else None,
+            "merma": cantidad_merma if hubo_merma else None,
             "csrf_token": generate_csrf()
         }), 200
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error guardando cantidad: {str(e)}")
-        return jsonify({"error": "Error interno", "detalle": str(e)}), 500
-
-
+        current_app.logger.error(f"Error en guardar_cantidad: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Error interno del servidor",
+            "detalle": str(e)
+        }), 500
 
     
 @chefCocinero.route('/inventario')

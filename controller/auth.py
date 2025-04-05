@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from models.models import db, Usuarios, Galleta, Pedido, DetallePedido, Venta, DetalleVenta
+from models.models import db, Usuarios
 from werkzeug.security import check_password_hash, generate_password_hash
 from models.formsLogin import LoginForm, RegistrarClientesForm, TwoFactorForm
 from datetime import timedelta
+from flask_login import login_user, logout_user, current_user, login_required
 from functools import wraps
 import pyotp
 import qrcode
@@ -25,25 +26,30 @@ def login():
         
         usuario = Usuarios.query.filter_by(email=email).first()
         
-        if not usuario:
+        if not usuario or not check_password_hash(usuario.password, password):
             flash('Credenciales incorrectas', 'error')
-        elif not check_password_hash(usuario.password, password):
-            flash('Credenciales incorrectas', 'error')
-        else:
-            # Guardar usuario en sesión temporal para 2FA
-            session['temp_user_id'] = usuario.id
-            session['temp_remember'] = remember
-            
-            # Si tiene 2FA activado, redirigir a verificación
-            if usuario.two_factor_enabled:
-                return redirect(url_for('auth.verify_2fa'))
-            
-            # Si no tiene 2FA, continuar con login normal
-            return complete_login(usuario, remember)
-            
-        return redirect(url_for('auth.login'))
+            return redirect(url_for('auth.login'))
+        
+        login_user(usuario, remember=remember)
+        session['temp_user_id'] = usuario.id  # Solo para 2FA
+        
+        if usuario.two_factor_enabled:
+            return redirect(url_for('auth.verify_2fa'))
+        
+        flash(f'Bienvenido, {usuario.nombre}!', 'success')
+        return redirect_after_login(usuario.rol)
     
     return render_template('login/login.html', form=form)
+
+def redirect_after_login(rol):
+    if rol == 'Admin':
+        return redirect(url_for('admin.ABCempleados'))
+    elif rol == 'Ventas':
+        return redirect(url_for('ventas.menuVentas'))
+    elif rol == 'Cocina':
+        return redirect(url_for('chefCocinero.inventario'))
+    elif rol == 'Cliente':
+        return redirect(url_for('cliente.menuCliente'))
 
 @auth_bp.route('/verify-2fa', methods=['GET', 'POST'])
 def verify_2fa():
@@ -100,7 +106,9 @@ def complete_login(usuario, remember):
         return redirect(url_for('cliente.menuCliente'))
 
 @auth_bp.route('/logout')
+@login_required
 def logout():
+    logout_user()
     session.clear()
     flash('Has cerrado sesión correctamente', 'success')
     return redirect(url_for('auth.login'))
@@ -155,19 +163,10 @@ def registrarClientes():
 
 
 # Decorador para verificar que la autenticación en dos pasos esté activada
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash("Por favor inicia sesión para acceder a esta página", "danger")
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_rol' not in session or session['user_rol'] != 'Admin':
+        if not current_user.is_authenticated or current_user.rol != 'Admin':
             flash("Acceso restringido: Solo para administradores", "danger")
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
@@ -176,7 +175,7 @@ def admin_required(f):
 def ventas_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_rol' not in session or session['user_rol'] != 'Ventas':
+        if not current_user.is_authenticated or current_user.rol != 'Ventas':
             flash("Acceso restringido: Solo para personal de ventas", "danger")
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
@@ -185,7 +184,7 @@ def ventas_required(f):
 def cocina_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_rol' not in session or session['user_rol'] != 'Cocina':
+        if not current_user.is_authenticated or current_user.rol != 'Cocina':
             flash("Acceso restringido: Solo para personal de cocina", "danger")
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
@@ -194,7 +193,7 @@ def cocina_required(f):
 def cliente_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_rol' not in session or session['user_rol'] != 'Cliente':
+        if not current_user.is_authenticated or current_user.rol != 'Cliente':
             flash("Acceso restringido: Solo para clientes", "danger")
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)

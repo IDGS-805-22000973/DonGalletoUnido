@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from models.models import db, Usuarios, Galleta, Pedido, DetallePedido, InventarioGalleta
 from datetime import datetime, timedelta
+from flask_login import current_user, login_required
 from decimal import Decimal
+from flask import current_app
 from controller.auth import cliente_required
 
 cliente_bp = Blueprint('cliente', __name__)
@@ -33,7 +35,7 @@ def menuCliente():
             
             # Crear pedido
             nuevo_pedido = Pedido(
-                cliente_id=session['user_id'],
+                cliente_id=current_user.id,
                 fecha_pedido=datetime.now(),
                 fecha_entrega=fecha_entrega,
                 total=0,
@@ -104,7 +106,7 @@ def menuCliente():
 @cliente_required
 def misPedidos():
     # Obtener pedidos ordenados por fecha descendente
-    pedidos = Pedido.query.filter_by(cliente_id=session['user_id'])\
+    pedidos = Pedido.query.filter_by(cliente_id=current_user.id)\
                          .order_by(Pedido.fecha_pedido.desc())\
                          .all()
     return render_template("cliente/misPedidos.html", pedidos=pedidos)

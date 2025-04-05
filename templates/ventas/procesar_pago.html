@@ -1,6 +1,11 @@
 {% extends "layoutVentas.html" %}
 {% block container %}
+
+<link rel="stylesheet" href="../static/CSS/layoutVentas.css">
+
 <link rel="stylesheet" href="{{ url_for('static', filename='CSS/procesarPago.css') }}">
+
+
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -70,23 +75,24 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const montoRecibido = document.getElementById('monto_recibido');
-    const cambioSpan = document.getElementById('cambio');
-    const total = {{ pedido.total }};
-    
-    montoRecibido.addEventListener('input', function() {
-        const recibido = parseFloat(this.value) || 0;
-        const cambio = recibido - total;
-        cambioSpan.textContent = cambio.toFixed(2);
+    document.addEventListener('DOMContentLoaded', function() {
+        const montoRecibido = document.getElementById('monto_recibido');
+        const cambioSpan = document.getElementById('cambio');
+        const total = {{ pedido.total }};
         
-        // Cambiar color del cambio si es negativo
-        if (cambio < 0) {
-            cambioSpan.style.color = '#dc3545';
-        } else {
-            cambioSpan.style.color = 'var(--color-oro)';
-        }
+        montoRecibido.addEventListener('input', function() {
+            const recibido = parseFloat(this.value) || 0;
+            const cambio = recibido - total;
+            cambioSpan.textContent = cambio.toFixed(2);
+            
+            // Cambiar color del cambio si es negativo
+            if (cambio < 0) {
+                cambioSpan.style.color = '#dc3545';
+            } else {
+                cambioSpan.style.color = 'var(--color-oro)';
+            }
+        });
     });
-});
 </script>
+
 {% endblock %}

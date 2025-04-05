@@ -1,10 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Numeric
 from datetime import datetime
+from flask_login import UserMixin
 
 db = SQLAlchemy()
 
-class Usuarios(db.Model):
+class Usuarios(db.Model, UserMixin):
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Cambiado a id
     nombre = db.Column(db.String(100), nullable=False)

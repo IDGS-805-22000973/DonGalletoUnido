@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from models.models import db, Usuarios, Galleta, Pedido, DetallePedido, Venta, DetalleVenta, InventarioGalleta
+from flask_login import current_user, login_required
 from datetime import datetime
 from controller.auth import ventas_required
 from sqlalchemy import or_
 from decimal import Decimal
 from sqlalchemy import func
+from flask import current_app
 from sqlalchemy.orm import joinedload
 from flask import send_file
 from io import BytesIO
@@ -82,7 +84,7 @@ def procesar_pago(pedido_id):
             
             # Crear registro de venta
             nueva_venta = Venta(
-                usuario_id=session['user_id'],
+                usuario_id=current_user.id,
                 fecha_venta=datetime.now(),
                 total=float(pedido.total),
                 costo_total=float(costo_total),

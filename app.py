@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, blueprints
 from flask import flash
+from flask_login import LoginManager, login_user, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
 from flask import g
 from models.config import DevelopmentConfig
@@ -32,11 +33,19 @@ app.config['RECAPTCHA_PUBLIC_KEY'] = '6LeW3QcrAAAAAN6aYMJ6ug29890dvzk9VaPlym_2' 
 app.config['RECAPTCHA_PRIVATE_KEY'] = '6LeW3QcrAAAAAMscJqqTBNWb-LJRpbh-FIc0ftTc'  # Clave secreta
 app.config['RECAPTCHA_PARAMETERS'] = {'hl': 'es'}  # Opcional: idioma español
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Usuarios.query.get(int(user_id))
+
 
 # Registrar Blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
-app.register_blueprint(ventas_bp)
+app.register_blueprint(ventas_bp, url_prefix='/ventas')
 app.register_blueprint(chefCocinero)
 app.register_blueprint(cliente_bp)
 
