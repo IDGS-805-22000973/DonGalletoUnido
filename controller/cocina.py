@@ -10,7 +10,7 @@ from models.forms import GalletaForm, PedidoForm, MateriasPrimasForm, Actualizar
 #otros
 from sqlalchemy.orm import joinedload
 from flask import jsonify, request, url_for
-from flask_login import current_user
+from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from flask_wtf.csrf import generate_csrf
 
@@ -266,132 +266,199 @@ def modificar_materia(id):
 
 
 
+
+
 # Funciones de recetas
 
-@chefCocinero.route("/recetas")
+@chefCocinero.route('/crear_receta', methods=['GET', 'POST'])
 @cocina_required
-def recetas():
-    create_form = RecetaForm(request.form)
-    recetas = Receta.query.all()  # Cambiado de 'receta' a 'recetas' (plural)
-    return render_template("cocina/recetas.html", form=create_form, recetas=recetas)
-
-
-@chefCocinero.route('/agregar_receta', methods=['GET', 'POST'])
-@cocina_required
-def agregar_receta():
-    form = RecetaForm(request.form) if request.method == 'POST' else RecetaForm()
-    materias_primas = MateriaPrima.query.all()
-
-    if request.method == 'POST' and form.validate_on_submit():
+def crear_receta():
+    if request.method == 'POST':
         try:
+            # Obtener datos del formulario
+            data = request.form
+            nombre_receta = data.get('nombre_receta')
+            descripcion = data.get('descripcion')
+            tiempo_preparacion = int(data.get('tiempo_preparacion'))
+            dias_caducidad = int(data.get('dias_caducidad'))
+            porcentaje_ganancia = Decimal(data.get('porcentaje_ganancia'))
+            peso_galleta = Decimal(data.get('peso_galleta', 100))  # Default 100g
+            
+            # Validaciones básicas
+            if peso_galleta <= 0:
+                flash('El peso por galleta debe ser mayor a cero', 'danger')
+                return redirect(url_for('chefCocinero.crear_receta'))
+
+            ingredientes = request.form.getlist('ingredientes[]')
+            cantidades = request.form.getlist('cantidades[]')
+            unidades = request.form.getlist('unidades[]')
+            
+            if not ingredientes:
+                flash('Debe agregar al menos un ingrediente', 'danger')
+                return redirect(url_for('chefCocinero.crear_receta'))
+
+            # Crear nueva receta
             nueva_receta = Receta(
-                nombre_receta=request.form.get('nombreReceta'),
-                descripcion=request.form.get('descripcion'),
-                cantidad_galletas_producidas=int(request.form.get('cantidadGalletaProducida')),
-                dias_caducidad=int(request.form.get('diasCaducidad')),
-                ingrediente_especial=request.form.get('ingredienteEspecial'),
-                tiempo_preparacion=0,
+                nombre_receta=nombre_receta,
+                descripcion=descripcion,
+                ingrediente_especial='',
+                cantidad_galletas_producidas=0,
+                tiempo_preparacion=tiempo_preparacion,
+                dias_caducidad=dias_caducidad,
                 activa=True
             )
             db.session.add(nueva_receta)
-            db.session.flush()  
+            db.session.flush()
+            
+            costo_total_receta = Decimal('0')
+            peso_total = Decimal('0')
+            
+            # Procesar cada ingrediente
+            for i, ingrediente_id in enumerate(ingredientes):
+                materia_prima = MateriaPrima.query.get_or_404(ingrediente_id)
+                cantidad = Decimal(cantidades[i])
+                unidad = unidades[i]
+                
+                # Convertir a gramos o mililitros
+                cantidad_base = convertir_a_unidad_base(cantidad, unidad, materia_prima.unidad_medida)
+                
+                if cantidad_base <= 0:
+                    flash(f'Cantidad inválida para {materia_prima.nombre}', 'danger')
+                    return redirect(url_for('chefCocinero.crear_receta'))
+                
+                # Calcular costo (precio_compra ya está en gramos/ml)
+                costo_ingrediente = cantidad_base * materia_prima.precio_compra
+                costo_total_receta += costo_ingrediente
+                peso_total += cantidad_base
+                
+                # Registrar ingrediente
+                db.session.add(IngredienteReceta(
+                    receta_id=nueva_receta.id,
+                    materia_prima_id=materia_prima.id,
+                    cantidad_necesaria=cantidad_base,
+                    observaciones=f"{cantidades[i]} {unidad}"
+                ))
+            
+            # Validar y calcular cantidad de galletas
+            if peso_total <= 0:
+                flash('El peso total debe ser mayor a cero', 'danger')
+                return redirect(url_for('chefCocinero.crear_receta'))
 
-            cantidades = request.form.to_dict(flat=False)
+            cantidad_galletas = int((peso_total / peso_galleta).to_integral_value())
+            if cantidad_galletas <= 0:
+                flash('La receta no produce galletas válidas', 'danger')
+                return redirect(url_for('chefCocinero.crear_receta'))
 
-            for materia in materias_primas:
-                key = f"cantidadNecesaria[{materia.id}]"
-                cantidad_lista = cantidades.get(key)
-
-                if cantidad_lista and cantidad_lista[0].strip() != '':
-                    cantidad = float(cantidad_lista[0])
-                    if cantidad > 0:
-                        ingrediente = IngredienteReceta(
-                            receta_id=nueva_receta.id,
-                            materia_prima_id=materia.id,
-                            cantidad_necesaria=cantidad,
-                            observaciones=""
-                        )
-                        db.session.add(ingrediente)
-
+            nueva_receta.cantidad_galletas_producidas = cantidad_galletas
+            
+            # Cálculos financieros
+            costo_por_galleta = costo_total_receta / Decimal(cantidad_galletas)
+            precio_venta = costo_por_galleta * (1 + (porcentaje_ganancia / Decimal('100')))
+            
+            # Crear galleta asociada
+            db.session.add(Galleta(
+                receta_id=nueva_receta.id,
+                nombre=nombre_receta,
+                costo_galleta=round(costo_por_galleta, 2),
+                precio=round(precio_venta, 2),
+                descripcion=descripcion,
+                activa=True
+            ))
+            
             db.session.commit()
-            flash("Receta registrada con éxito", "success")
-            return redirect(url_for('chefCocinero.getAll_receta'))
-
+            
+            flash(
+                f'✅ Receta creada: {cantidad_galletas} galletas de {peso_galleta}g\n'
+                f'💰 Costo: ${round(costo_por_galleta, 2)} c/u | '
+                f'Precio: ${round(precio_venta, 2)} | '
+                f'Ganancia: {round(((precio_venta - costo_por_galleta) / costo_por_galleta * 100), 1)}%',
+                'success'
+            )
+            return redirect(url_for('chefCocinero.listar_recetas'))
+            
         except Exception as e:
             db.session.rollback()
-            flash(f"Error al registrar la receta: {str(e)}", "danger")
-            print(f"Error al registrar receta: {str(e)}")
-    elif request.method == 'POST':
-        flash("Por favor corrige los errores del formulario", "danger")
-
-    return render_template("cocina/recetas.html", form=form, materias_primas=materias_primas)
-
-
-@chefCocinero.route('/getAll_receta', methods=['GET'])
-@cocina_required
-def getAll_receta():
-    recetas = Receta.query.all()
-
-    recetas_lista = [
-        {
-            "id": receta.id,
-            "nombre_receta": receta.nombre_receta,
-            "ingrediente_especial": receta.ingrediente_especial,
-            "descripcion": receta.descripcion, 
-            "cantidad_galletas_producidas": receta.cantidad_galletas_producidas,
-            "tiempo_preparacion": receta.tiempo_preparacion,
-            "dias_caducidad": receta.dias_caducidad,            
-            "activa": receta.activa
-        }
-        for receta in recetas
-    ]
-
-    form = RecetaForm()
-    return render_template('cocina/vistaRecetas.html', recetas=recetas_lista, form=form)
-
-@chefCocinero.route('/editar_receta/<int:receta_id>', methods=['POST'])
-@cocina_required
-def editar_receta(receta_id):
-    receta = Receta.query.get_or_404(receta_id)
+            flash(f'Error al crear receta: {str(e)}', 'danger')
+            app.logger.error(f'Error en crear_receta: {str(e)}', exc_info=True)
     
-    receta.nombre_receta = request.form['nombre_receta']
-    receta.ingrediente_especial = request.form['ingrediente_especial']
-    receta.descripcion = request.form['descripcion']
-    receta.cantidad_galletas_producidas = int(request.form['cantidad_galletas_producidas'])
-    receta.tiempo_preparacion = int(request.form['tiempo_preparacion'])
-    receta.dias_caducidad = int(request.form['dias_caducidad'])
-    receta.activa = 'activa' in request.form
+    # GET: Mostrar formulario
+    materias_primas = MateriaPrima.query.filter_by(activa=True).order_by(MateriaPrima.nombre).all()
+    return render_template('cocina/crear_receta.html', materias_primas=materias_primas)
+
+def convertir_a_unidad_base(cantidad, unidad_origen, unidad_base_ingrediente):
+    """Convierte a gramos o mililitros según la unidad base del ingrediente"""
+    # Factores de conversión a gramos o ml
+    factores = {
+        'gramo': Decimal('1'),
+        'kilogramo': Decimal('1000'),
+        'mililitro': Decimal('1'),
+        'litro': Decimal('1000'),
+        'onza': Decimal('28.3495'),    # a gramos
+        'libra': Decimal('453.592'),    # a gramos
+        'onza_liquida': Decimal('29.5735'),  # a ml
+        'taza': Decimal('240'),         # a ml (líquidos)
+        'pieza': Decimal('50')          # 1 huevo = 50g aprox
+    }
     
-    db.session.commit()
+    try:
+        cantidad_dec = Decimal(str(cantidad))
+        
+        # Si la unidad de origen existe en los factores
+        if unidad_origen in factores:
+            # Convertir a gramos o ml primero
+            cantidad_base = cantidad_dec * factores[unidad_origen]
+            
+            # Si la unidad base del ingrediente es kg/lt, convertir a gramos/ml
+            if unidad_base_ingrediente in ['kilogramo', 'litro']:
+                cantidad_base *= Decimal('1000')
+                
+            return cantidad_base
+        
+        return cantidad_dec
     
-    flash("Receta actualizada con éxito", "success")
-    return redirect(url_for('chefCocinero.getAll_receta'))
+    except Exception as e:
+        app.logger.error(f'Error en conversión de unidades: {str(e)}')
+        return Decimal('0')
 
-
-@chefCocinero.route('/eliminar_receta/<int:receta_id>', methods=['POST'])
+@chefCocinero.route('/api/unidades_ingrediente/<int:id>')
 @cocina_required
-def eliminar_receta(receta_id):
-    receta = Receta.query.get_or_404(receta_id)
-    db.session.delete(receta)
-    db.session.commit()
-    flash("Receta eliminada correctamente", "danger")
-    return redirect(url_for('chefCocinero.getAll_receta'))
+def get_unidades_ingrediente(id):
+    """Endpoint para obtener unidades compatibles"""
+    materia_prima = MateriaPrima.query.get_or_404(id)
+    
+    # Unidades compatibles basadas en gramos/ml
+    if materia_prima.unidad_medida in ['gramo', 'kilogramo']:
+        unidades = [
+            {'valor': 'gramo', 'texto': 'Gramos (g)'},
+            {'valor': 'kilogramo', 'texto': 'Kilogramos (kg)'},
+            {'valor': 'onza', 'texto': 'Onzas (oz)'},
+            {'valor': 'libra', 'texto': 'Libras (lb)'}
+        ]
+    elif materia_prima.unidad_medida in ['mililitro', 'litro']:
+        unidades = [
+            {'valor': 'mililitro', 'texto': 'Mililitros (ml)'},
+            {'valor': 'litro', 'texto': 'Litros (L)'},
+            {'valor': 'onza_liquida', 'texto': 'Onzas líquidas (fl oz)'},
+            {'valor': 'taza', 'texto': 'Tazas (cup)'}
+        ]
+    else:  # pieza
+        unidades = [
+            {'valor': 'pieza', 'texto': 'Unidades'}
+        ]
+    
+    return jsonify({
+        'unidades': unidades,
+        'unidad_base': materia_prima.unidad_medida
+    })
 
-@chefCocinero.route("/buscar_recetas", methods=["GET"])
+@chefCocinero.route('/listar_recetas')
 @cocina_required
-def buscar_recetas():
-    form = RecetaForm() 
-    query = request.args.get("query", "").strip().lower()
-    recetas = Receta.query.all()
+def listar_recetas():
+    recetas = Receta.query.filter_by(activa=True).order_by(Receta.nombre_receta).all()
+    return render_template('cocina/listar_recetas.html', recetas=recetas)
 
-    if query:
-        recetas = [r for r in recetas if 
-            query in r.nombre_receta.lower() or
-            query in r.ingrediente_especial.lower() or
-            query in r.descripcion.lower() or
-            query in str(r.cantidad_galletas_producidas) or
-            query in str(r.tiempo_preparacion) or
-            query in str(r.dias_caducidad) or
-            (query in "sí" if r.activa else "no")]
-
-    return render_template('cocina/vistaRecetas.html', recetas=recetas, form=form)
+@chefCocinero.route('/detalle_receta/<int:id>')
+@cocina_required
+def detalle_receta(id):
+    receta = Receta.query.get_or_404(id)
+    return render_template('cocina/detalle_receta.html', receta=receta)

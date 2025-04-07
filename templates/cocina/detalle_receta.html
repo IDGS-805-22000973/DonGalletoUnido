@@ -1,0 +1,53 @@
+{% extends "layoutCocinero.html" %}
+
+{% block container %}
+<div class="container">
+    <h2>Detalle de Receta: {{ receta.nombre_receta }}</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h4>Información General</h4>
+            <p><strong>Descripción:</strong> {{ receta.descripcion }}</p>
+            <p><strong>Ingrediente Especial:</strong> {{ receta.ingrediente_especial }}</p>
+            <p><strong>Tiempo de Preparación:</strong> {{ receta.tiempo_preparacion }} minutos</p>
+            <p><strong>Días de Caducidad:</strong> {{ receta.dias_caducidad }} días</p>
+            <p><strong>Galletas por Receta:</strong> {{ receta.cantidad_galletas_producidas }}</p>
+        </div>
+        
+        <div class="col-md-6">
+            <h4>Información de la Galleta</h4>
+            {% if receta.galletas %}
+                {% set galleta = receta.galletas[0] %}
+                <p><strong>Nombre:</strong> {{ galleta.nombre }}</p>
+                <p><strong>Costo por Galleta:</strong> ${{ "%.2f"|format(galleta.costo_galleta) }}</p>
+                <p><strong>Precio de Venta:</strong> ${{ "%.2f"|format(galleta.precio) }}</p>
+                <p><strong>Margen de Ganancia:</strong> {{ "%.0f"|format((galleta.precio - galleta.costo_galleta) / galleta.costo_galleta * 100) }}%</p>
+            {% else %}
+                <p class="text-danger">No se ha creado la galleta asociada</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <h4>Ingredientes</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Ingrediente</th>
+                <th>Cantidad</th>
+                <th>Observaciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ingrediente in receta.ingredientes %}
+            <tr>
+                <td>{{ ingrediente.materia_prima.nombre }}</td>
+                <td>{{ ingrediente.cantidad_necesaria }} {{ ingrediente.materia_prima.unidad_medida }}</td>
+                <td>{{ ingrediente.observaciones }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <a href="{{ url_for('chefCocinero.listar_recetas') }}" class="btn btn-secondary">Volver</a>
+</div>
+{% endblock %}

@@ -52,6 +52,7 @@ class MateriaPrima(db.Model):
     precio_compra = db.Column(db.Numeric(10,2), nullable=False)
     fecha_caducidad = db.Column(db.Date)
     fecha_ultima_compra = db.Column(db.Date)
+    activa = db.Column(db.Boolean, default=True)  # Añade esta línea
     
     proveedor = db.relationship('Proveedor', backref='materias_primas')
 

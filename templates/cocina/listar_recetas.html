@@ -1,0 +1,34 @@
+{% extends "layoutCocinero.html" %}
+
+
+{% block container %}
+<div class="container">
+    <h2>Listado de Recetas</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Ingrediente Especial</th>
+                <th>Galletas Producidas</th>
+                <th>Tiempo Prep.</th>
+                <th>Caducidad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for receta in recetas %}
+            <tr>
+                <td>{{ receta.nombre_receta }}</td>
+                <td>{{ receta.ingrediente_especial }}</td>
+                <td>{{ receta.cantidad_galletas_producidas }}</td>
+                <td>{{ receta.tiempo_preparacion }} min</td>
+                <td>{{ receta.dias_caducidad }} días</td>
+                <td>
+                    <a href="{{ url_for('chefCocinero.detalle_receta', id=receta.id) }}" class="btn btn-info btn-sm">Detalle</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
