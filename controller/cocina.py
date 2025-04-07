@@ -20,14 +20,17 @@ chefCocinero = Blueprint('chefCocinero', __name__)
 @cocina_required
 def produccion():
     try:
+        # Obtener galletas con stock bajo (<50) y recetas activas
         galletas = (
             db.session.query(
                 Galleta,
                 EstadoGalleta.estatus,
                 db.func.coalesce(db.func.sum(InventarioGalleta.stock), 0).label('total_stock')
             )
+            .join(Receta, Galleta.receta_id == Receta.id)
             .outerjoin(EstadoGalleta, Galleta.id == EstadoGalleta.galleta_id)
             .outerjoin(InventarioGalleta, Galleta.id == InventarioGalleta.galleta_id)
+            .filter(Receta.activa == True)  # Solo recetas activas
             .group_by(Galleta.id, EstadoGalleta.estatus)
             .having(db.func.coalesce(db.func.sum(InventarioGalleta.stock), 0) < 50)
             .all()
@@ -44,10 +47,8 @@ def produccion():
     except Exception as e:
         print(f"Error: {str(e)}")
         return render_template('cocina/produccion.html', galletas=[])
-        
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return render_template('cocina/produccion.html', galletas=[])
+
+
 
 @chefCocinero.route('/actualizar_estado', methods=['POST'])
 @cocina_required
@@ -454,7 +455,7 @@ def get_unidades_ingrediente(id):
 @chefCocinero.route('/listar_recetas')
 @cocina_required
 def listar_recetas():
-    recetas = Receta.query.filter_by(activa=True).order_by(Receta.nombre_receta).all()
+    recetas = Receta.query.order_by(Receta.nombre_receta).all()  # Removed filter to show all recipes
     return render_template('cocina/listar_recetas.html', recetas=recetas)
 
 @chefCocinero.route('/detalle_receta/<int:id>')
@@ -462,3 +463,138 @@ def listar_recetas():
 def detalle_receta(id):
     receta = Receta.query.get_or_404(id)
     return render_template('cocina/detalle_receta.html', receta=receta)
+
+@chefCocinero.route('/cambiar_estado_receta/<int:id>', methods=['POST'])
+@cocina_required
+def cambiar_estado_receta(id):
+    receta = Receta.query.get_or_404(id)
+    receta.activa = not receta.activa
+    db.session.commit()
+    flash(f'Receta {receta.nombre_receta} {"activada" if receta.activa else "desactivada"} correctamente', 'success')
+    return redirect(url_for('chefCocinero.listar_recetas'))
+
+
+@chefCocinero.route('/modificar_receta/<int:id>', methods=['GET', 'POST'])
+@cocina_required
+def modificar_receta(id):
+    receta = Receta.query.get_or_404(id)
+    galleta = Galleta.query.filter_by(receta_id=receta.id).first()
+    
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            data = request.form
+            receta.nombre_receta = data.get('nombre_receta')
+            receta.descripcion = data.get('descripcion')
+            receta.tiempo_preparacion = int(data.get('tiempo_preparacion'))
+            receta.dias_caducidad = int(data.get('dias_caducidad'))
+            porcentaje_ganancia = Decimal(data.get('porcentaje_ganancia'))
+            peso_galleta = Decimal(data.get('peso_galleta', 100))  # Default 100g
+            
+            # Validaciones básicas
+            if peso_galleta <= 0:
+                flash('El peso por galleta debe ser mayor a cero', 'danger')
+                return redirect(url_for('chefCocinero.modificar_receta', id=id))
+
+            ingredientes = request.form.getlist('ingredientes[]')
+            cantidades = request.form.getlist('cantidades[]')
+            unidades = request.form.getlist('unidades[]')
+            
+            if not ingredientes:
+                flash('Debe agregar al menos un ingrediente', 'danger')
+                return redirect(url_for('chefCocinero.modificar_receta', id=id))
+
+            # Eliminar ingredientes antiguos
+            IngredienteReceta.query.filter_by(receta_id=receta.id).delete()
+            db.session.flush()
+            
+            costo_total_receta = Decimal('0')
+            peso_total = Decimal('0')
+            
+            # Procesar cada ingrediente
+            for i, ingrediente_id in enumerate(ingredientes):
+                materia_prima = MateriaPrima.query.get_or_404(ingrediente_id)
+                cantidad = Decimal(cantidades[i])
+                unidad = unidades[i]
+                
+                # Convertir a gramos o mililitros
+                cantidad_base = convertir_a_unidad_base(cantidad, unidad, materia_prima.unidad_medida)
+                
+                if cantidad_base <= 0:
+                    flash(f'Cantidad inválida para {materia_prima.nombre}', 'danger')
+                    return redirect(url_for('chefCocinero.modificar_receta', id=id))
+                
+                # Calcular costo (precio_compra ya está en gramos/ml)
+                costo_ingrediente = cantidad_base * materia_prima.precio_compra
+                costo_total_receta += costo_ingrediente
+                peso_total += cantidad_base
+                
+                # Registrar ingrediente
+                db.session.add(IngredienteReceta(
+                    receta_id=receta.id,
+                    materia_prima_id=materia_prima.id,
+                    cantidad_necesaria=cantidad_base,
+                    observaciones=f"{cantidades[i]} {unidad}"
+                ))
+            
+            # Validar y calcular cantidad de galletas
+            if peso_total <= 0:
+                flash('El peso total debe ser mayor a cero', 'danger')
+                return redirect(url_for('chefCocinero.modificar_receta', id=id))
+
+            cantidad_galletas = int((peso_total / peso_galleta).to_integral_value())
+            if cantidad_galletas <= 0:
+                flash('La receta no produce galletas válidas', 'danger')
+                return redirect(url_for('chefCocinero.modificar_receta', id=id))
+
+            receta.cantidad_galletas_producidas = cantidad_galletas
+            
+            # Cálculos financieros
+            costo_por_galleta = costo_total_receta / Decimal(cantidad_galletas)
+            precio_venta = costo_por_galleta * (1 + (porcentaje_ganancia / Decimal('100')))
+            
+            # Actualizar galleta asociada
+            galleta.nombre = receta.nombre_receta
+            galleta.costo_galleta = round(costo_por_galleta, 2)
+            galleta.precio = round(precio_venta, 2)
+            galleta.descripcion = receta.descripcion
+            
+            db.session.commit()
+            
+            flash(
+                f'✅ Receta actualizada: {cantidad_galletas} galletas de {peso_galleta}g\n'
+                f'💰 Costo: ${round(costo_por_galleta, 2)} c/u | '
+                f'Precio: ${round(precio_venta, 2)} | '
+                f'Ganancia: {round(((precio_venta - costo_por_galleta) / costo_por_galleta * 100), 1)}%',
+                'success'
+            )
+            return redirect(url_for('chefCocinero.listar_recetas'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al modificar receta: {str(e)}', 'danger')
+            app.logger.error(f'Error en modificar_receta: {str(e)}', exc_info=True)
+            return redirect(url_for('chefCocinero.modificar_receta', id=id))
+    
+    # GET: Mostrar formulario con datos actuales
+    materias_primas = MateriaPrima.query.filter_by(activa=True).order_by(MateriaPrima.nombre).all()
+    
+    # Calcular porcentaje de ganancia actual
+    porcentaje_actual = 0
+    if galleta and galleta.costo_galleta > 0:
+        porcentaje_actual = ((galleta.precio - galleta.costo_galleta) / galleta.costo_galleta) * 100
+    
+    # Obtener ingredientes actuales de la receta
+    ingredientes_actuales = IngredienteReceta.query.filter_by(receta_id=receta.id).all()
+    
+    # Calcular peso total actual para determinar peso por galleta
+    peso_total_actual = sum(i.cantidad_necesaria for i in ingredientes_actuales)
+    peso_galleta_actual = peso_total_actual / receta.cantidad_galletas_producidas if receta.cantidad_galletas_producidas > 0 else 100
+    
+    return render_template('cocina/modificar_receta.html', 
+                         receta=receta,
+                         galleta=galleta,
+                         materias_primas=materias_primas,
+                         ingredientes_actuales=ingredientes_actuales,
+                         porcentaje_actual=round(porcentaje_actual, 2),
+                         peso_galleta_actual=round(peso_galleta_actual, 2))

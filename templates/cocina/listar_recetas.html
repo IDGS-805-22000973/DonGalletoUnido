@@ -1,17 +1,24 @@
 {% extends "layoutCocinero.html" %}
 
-
 {% block container %}
 <div class="container">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <h2>Listado de Recetas</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
     <table class="table table-striped">
         <thead>
             <tr>
                 <th>Nombre</th>
-                <th>Ingrediente Especial</th>
                 <th>Galletas Producidas</th>
                 <th>Tiempo Prep.</th>
                 <th>Caducidad</th>
+                <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -19,16 +26,36 @@
             {% for receta in recetas %}
             <tr>
                 <td>{{ receta.nombre_receta }}</td>
-                <td>{{ receta.ingrediente_especial }}</td>
                 <td>{{ receta.cantidad_galletas_producidas }}</td>
                 <td>{{ receta.tiempo_preparacion }} min</td>
                 <td>{{ receta.dias_caducidad }} días</td>
                 <td>
-                    <a href="{{ url_for('chefCocinero.detalle_receta', id=receta.id) }}" class="btn btn-info btn-sm">Detalle</a>
+                    <span class="badge bg-{{ 'success' if receta.activa else 'danger' }}">
+                        {{ 'Activa' if receta.activa else 'Inactiva' }}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('chefCocinero.detalle_receta', id=receta.id) }}" class="btn btn-info btn-sm">Detalle</a>
+                        <a href="{{ url_for('chefCocinero.modificar_receta', id=receta.id) }}" class="btn btn-warning btn-sm">Modificar</a>
+                        <form method="POST" action="{{ url_for('chefCocinero.cambiar_estado_receta', id=receta.id) }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-{{ 'danger' if receta.activa else 'success' }} btn-sm">
+                                {{ 'Desactivar' if receta.activa else 'Activar' }}
+                            </button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    <a href="{{ url_for('chefCocinero.crear_receta') }}" class="btn btn-primary">Nueva Receta</a>
 </div>
 {% endblock %}
+
+
+
+
+
+
