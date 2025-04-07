@@ -1,3 +1,4 @@
+from flask import url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Numeric
 from datetime import datetime
@@ -82,6 +83,8 @@ class IngredienteReceta(db.Model):
     
     materia_prima = db.relationship('MateriaPrima')
 
+
+#Modificación de ModelGalletas
 class Galleta(db.Model):
     __tablename__ = 'galletas'
     
@@ -91,12 +94,17 @@ class Galleta(db.Model):
     costo_galleta = db.Column(db.Numeric(10,2), nullable=False)
     precio = db.Column(db.Numeric(10,2), nullable=False)
     descripcion = db.Column(db.Text)
+    url_imagen = db.Column(db.String(255))  
     activa = db.Column(db.Boolean, default=True)
     
     inventario = db.relationship('InventarioGalleta', backref='galleta')
     detalles_pedido = db.relationship('DetallePedido', backref='galleta')
     detalles_venta = db.relationship('DetalleVenta', backref='galleta')
     solicitudes = db.relationship('SolicitudProduccion', backref='galleta')
+    def imagen_url(self):
+        if self.url_imagen:
+            return url_for('static', filename=self.url_imagen.replace('static/', ''))
+        return url_for('static', filename='imagenGalletas/default.jpg')
 
 class InventarioGalleta(db.Model):
     __tablename__ = 'inventario_galletas'

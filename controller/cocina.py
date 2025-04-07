@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
-from flask import Blueprint, flash, redirect, render_template, request, jsonify, make_response, session, url_for
+import os
+from flask import Blueprint, current_app, flash, redirect, render_template, request, jsonify, make_response, session, url_for
 from wtforms import DateField
 from models.models import Merma, db, Usuarios, Galleta, Pedido, DetallePedido, Venta, DetalleVenta, Proveedor, PagoProveedor, MateriaPrima, Receta, IngredienteReceta, InventarioGalleta, EstadoGalleta
 from flask_wtf.csrf import generate_csrf
@@ -13,6 +14,7 @@ from flask import jsonify, request, url_for
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from flask_wtf.csrf import generate_csrf
+from werkzeug.utils import secure_filename
 
 chefCocinero = Blueprint('chefCocinero', __name__)
 
@@ -268,13 +270,37 @@ def modificar_materia(id):
 
 
 
-# Funciones de recetas
+#Insertar imagen en receta
+EXTENSIONES_PERMITIDAS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
+def extension_valida(nombre_archivo):
+    return '.' in nombre_archivo and \
+        nombre_archivo.rsplit('.', 1)[1].lower() in EXTENSIONES_PERMITIDAS
+# Funciones de recetas
 @chefCocinero.route('/crear_receta', methods=['GET', 'POST'])
 @cocina_required
 def crear_receta():
     if request.method == 'POST':
         try:
+            # Ruta para guardar imágenes
+            CARPETA_IMAGENES = os.path.join('static', 'imagenGalletas')
+            os.makedirs(CARPETA_IMAGENES, exist_ok=True)
+            # Subir imagen (opcional)
+            imagen = request.files.get('imagen')
+            url_imagen = None
+
+            if imagen and imagen.filename != '':
+                if extension_valida(imagen.filename):
+                    filename = secure_filename(imagen.filename)
+                    ruta_completa = os.path.join(CARPETA_IMAGENES, filename)
+                    imagen.save(ruta_completa)
+                    url_imagen = f"imagenGalletas/{filename}"  # Solo la ruta relativa
+                else:
+                    flash('Formato de imagen no permitido. Usa PNG, JPG, JPEG, GIF o WEBP.', 'error')
+                    return redirect(request.url)
+            #Aquí se inserta la imagen en la receta
+            
+            
             # Obtener datos del formulario
             data = request.form
             nombre_receta = data.get('nombre_receta')
@@ -284,7 +310,6 @@ def crear_receta():
             porcentaje_ganancia = Decimal(data.get('porcentaje_ganancia'))
             peso_galleta = Decimal(data.get('peso_galleta', 100))  # Default 100g
             
-            # Validaciones básicas
             if peso_galleta <= 0:
                 flash('El peso por galleta debe ser mayor a cero', 'danger')
                 return redirect(url_for('chefCocinero.crear_receta'))
@@ -297,7 +322,6 @@ def crear_receta():
                 flash('Debe agregar al menos un ingrediente', 'danger')
                 return redirect(url_for('chefCocinero.crear_receta'))
 
-            # Crear nueva receta
             nueva_receta = Receta(
                 nombre_receta=nombre_receta,
                 descripcion=descripcion,
@@ -313,25 +337,21 @@ def crear_receta():
             costo_total_receta = Decimal('0')
             peso_total = Decimal('0')
             
-            # Procesar cada ingrediente
             for i, ingrediente_id in enumerate(ingredientes):
                 materia_prima = MateriaPrima.query.get_or_404(ingrediente_id)
                 cantidad = Decimal(cantidades[i])
                 unidad = unidades[i]
                 
-                # Convertir a gramos o mililitros
                 cantidad_base = convertir_a_unidad_base(cantidad, unidad, materia_prima.unidad_medida)
                 
                 if cantidad_base <= 0:
                     flash(f'Cantidad inválida para {materia_prima.nombre}', 'danger')
                     return redirect(url_for('chefCocinero.crear_receta'))
                 
-                # Calcular costo (precio_compra ya está en gramos/ml)
                 costo_ingrediente = cantidad_base * materia_prima.precio_compra
                 costo_total_receta += costo_ingrediente
                 peso_total += cantidad_base
                 
-                # Registrar ingrediente
                 db.session.add(IngredienteReceta(
                     receta_id=nueva_receta.id,
                     materia_prima_id=materia_prima.id,
@@ -339,7 +359,6 @@ def crear_receta():
                     observaciones=f"{cantidades[i]} {unidad}"
                 ))
             
-            # Validar y calcular cantidad de galletas
             if peso_total <= 0:
                 flash('El peso total debe ser mayor a cero', 'danger')
                 return redirect(url_for('chefCocinero.crear_receta'))
@@ -351,17 +370,17 @@ def crear_receta():
 
             nueva_receta.cantidad_galletas_producidas = cantidad_galletas
             
-            # Cálculos financieros
             costo_por_galleta = costo_total_receta / Decimal(cantidad_galletas)
             precio_venta = costo_por_galleta * (1 + (porcentaje_ganancia / Decimal('100')))
-            
-            # Crear galleta asociada
+
+            # ✅ Aquí se agrega url_imagen
             db.session.add(Galleta(
                 receta_id=nueva_receta.id,
                 nombre=nombre_receta,
                 costo_galleta=round(costo_por_galleta, 2),
                 precio=round(precio_venta, 2),
                 descripcion=descripcion,
+                url_imagen=url_imagen,
                 activa=True
             ))
             
@@ -380,10 +399,13 @@ def crear_receta():
             db.session.rollback()
             flash(f'Error al crear receta: {str(e)}', 'danger')
             app.logger.error(f'Error en crear_receta: {str(e)}', exc_info=True)
-    
-    # GET: Mostrar formulario
+
     materias_primas = MateriaPrima.query.filter_by(activa=True).order_by(MateriaPrima.nombre).all()
     return render_template('cocina/crear_receta.html', materias_primas=materias_primas)
+
+
+
+
 
 def convertir_a_unidad_base(cantidad, unidad_origen, unidad_base_ingrediente):
     """Convierte a gramos o mililitros según la unidad base del ingrediente"""

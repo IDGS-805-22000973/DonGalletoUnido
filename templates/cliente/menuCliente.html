@@ -12,11 +12,11 @@
         --color-marron-medio: #6B553D;
         --color-marron-oscuro: #3A2812;
     }
-    
+
     body {
         background-color: var(--color-crema);
     }
-    
+
     .card-galleta {
         border-radius: 12px;
         overflow: hidden;
@@ -24,40 +24,40 @@
         border: 1px solid var(--color-marron-medio);
         background-color: white;
     }
-    
+
     .card-galleta:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(58, 40, 18, 0.15);
     }
-    
+
     .card-img-galleta {
         height: 200px;
         object-fit: cover;
         object-position: center;
         border-bottom: 2px solid var(--color-marron-medio);
     }
-    
+
     .precio-destacado {
         font-size: 1.1rem;
         font-weight: 600;
         color: var(--color-oro);
     }
-    
+
     .card-titulo {
         color: var(--color-marron-oscuro);
         font-weight: 600;
     }
-    
+
     .card-texto {
         color: var(--color-marron-medio);
     }
-    
+
     .card-entrega {
         border-radius: 12px;
         border: 2px solid var(--color-marron-medio);
         background-color: white;
     }
-    
+
     .btn-confirmar {
         background-color: var(--color-naranja);
         border: none;
@@ -65,37 +65,39 @@
         font-weight: 500;
         letter-spacing: 0.5px;
     }
-    
+
     .btn-confirmar:hover {
         background-color: var(--color-marron-oscuro);
     }
-    
-    .form-control, .form-select {
+
+    .form-control,
+    .form-select {
         border-radius: 8px;
         border: 1px solid var(--color-marron-medio);
     }
-    
-    .form-control:focus, .form-select:focus {
+
+    .form-control:focus,
+    .form-select:focus {
         border-color: var(--color-naranja);
         box-shadow: 0 0 0 0.25rem rgba(214, 119, 71, 0.25);
     }
-    
+
     .alert-warning {
         border-radius: 12px;
         background-color: var(--color-crema);
         border: 1px solid var(--color-oro);
         color: var(--color-marron-oscuro);
     }
-    
+
     .titulo-principal {
         color: var(--color-marron-oscuro);
         text-shadow: 1px 1px 2px rgba(232, 207, 193, 0.5);
     }
-    
+
     .subtitulo {
         color: var(--color-marron-medio);
     }
-    
+
     .card-header-estilo {
         background-color: var(--color-marron-oscuro);
         color: var(--color-crema);
@@ -104,60 +106,55 @@
 </style>
 
 <div class="container py-4">
-    <div class="text-center mb-5">
+    <div class="text-center mb-5 p-4 rounded-3" style="background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);">
         <h2 class="fw-bold mb-3 titulo-principal">Realizar Pedido</h2>
         <p class="subtitulo">Selecciona tus galletas favoritas y completa los datos de entrega</p>
     </div>
-    
+
     <form method="POST" action="{{ url_for('cliente.menuCliente') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        
+
         <div class="row g-4">
             {% if galletas %}
-                {% for galleta in galletas %}
-                    <div class="col-md-6">
-                        <div class="card h-100 shadow-sm card-galleta">
-                            <img src="{{ url_for('static', filename='img/galleta.png') }}" 
-                                 class="card-img-top card-img-galleta" 
-                                 alt="{{ galleta.nombre }}">
-                            <div class="card-body">
-                                <h5 class="card-title card-titulo mb-3">{{ galleta.nombre }}</h5>
-                                <p class="card-text card-texto mb-3">{{ galleta.descripcion }}</p>
-                                <p class="precio-destacado mb-4">Precio por unidad: ${{ "%.2f"|format(galleta.precio) }}</p>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold" style="color: var(--color-marron-oscuro);">Presentación:</label>
-                                    <select class="form-select mb-3" name="presentacion_{{ galleta.id }}" required>
-                                        {% for key, pres in presentaciones.items() %}
-                                            <option value="{{ key }}">{{ pres.nombre }} ({{ pres.unidad }})</option>
-                                        {% endfor %}
-                                    </select>
-                                    
-                                    <label for="cantidad_{{ galleta.id }}" class="form-label fw-semibold" style="color: var(--color-marron-oscuro);">Cantidad:</label>
-                                    <input type="number" 
-                                           id="cantidad_{{ galleta.id }}"
-                                           name="cantidad_{{ galleta.id }}"
-                                           class="form-control" 
-                                           value="0" 
-                                           min="0" 
-                                           step="0.01"
-                                           required>
-                                </div>
-                            </div>
+            {% for galleta in galletas %}
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm card-galleta">
+                    <img src="{{ url_for('static', filename=galleta.url_imagen) if galleta.url_imagen else url_for('static', filename='img/galleta.png') }}"
+                        class="card-img-top card-img-galleta" alt="{{ galleta.nombre }}">
+                    <div class="card-body">
+                        <h5 class="card-title card-titulo mb-3">{{ galleta.nombre }}</h5>
+                        <p class="card-text card-texto mb-3">{{ galleta.descripcion }}</p>
+                        <p class="precio-destacado mb-4">Precio por unidad: ${{ "%.2f"|format(galleta.precio) }}</p>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold"
+                                style="color: var(--color-marron-oscuro);">Presentación:</label>
+                            <select class="form-select mb-3" name="presentacion_{{ galleta.id }}" required>
+                                {% for key, pres in presentaciones.items() %}
+                                <option value="{{ key }}">{{ pres.nombre }} ({{ pres.unidad }})</option>
+                                {% endfor %}
+                            </select>
+
+                            <label for="cantidad_{{ galleta.id }}" class="form-label fw-semibold"
+                                style="color: var(--color-marron-oscuro);">Cantidad:</label>
+                            <input type="number" id="cantidad_{{ galleta.id }}" name="cantidad_{{ galleta.id }}"
+                                class="form-control" value="0" min="0" step="0.01" required>
                         </div>
                     </div>
-                {% endfor %}
-            {% else %}
-                <div class="col-12">
-                    <div class="alert alert-warning text-center py-4">
-                        <i class="bi bi-emoji-frown fs-4" style="color: var(--color-oro);"></i>
-                        <h5 class="mt-2 mb-1">No hay galletas disponibles actualmente</h5>
-                        <p class="mb-0">Por favor revisa más tarde</p>
-                    </div>
                 </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-warning text-center py-4">
+                    <i class="bi bi-emoji-frown fs-4" style="color: var(--color-oro);"></i>
+                    <h5 class="mt-2 mb-1">No hay galletas disponibles actualmente</h5>
+                    <p class="mb-0">Por favor revisa más tarde</p>
+                </div>
+            </div>
             {% endif %}
         </div>
-        
+
         <div class="row mt-5">
             <div class="col-md-8 offset-md-2">
                 <div class="card shadow-sm card-entrega">
@@ -168,25 +165,19 @@
                     </div>
                     <div class="card-body p-4">
                         <div class="mb-4">
-                            <label for="fecha_entrega" class="form-label fw-semibold" style="color: var(--color-marron-oscuro);">Fecha deseada:</label>
-                            <input type="date" 
-                                   class="form-control" 
-                                   id="fecha_entrega" 
-                                   name="fecha_entrega" 
-                                   required
-                                   min="{{ min_date }}"
-                                   max="{{ max_date }}">
+                            <label for="fecha_entrega" class="form-label fw-semibold"
+                                style="color: var(--color-marron-oscuro);">Fecha deseada:</label>
+                            <input type="date" class="form-control" id="fecha_entrega" name="fecha_entrega" required
+                                min="{{ min_date }}" max="{{ max_date }}">
                         </div>
-                        
+
                         <div class="mb-4">
-                            <label for="observaciones" class="form-label fw-semibold" style="color: var(--color-marron-oscuro);">Instrucciones especiales:</label>
-                            <textarea class="form-control" 
-                                      id="observaciones" 
-                                      name="observaciones" 
-                                      rows="3"
-                                      placeholder="Ej: Empaque para regalo, alergias alimenticias, etc."></textarea>
+                            <label for="observaciones" class="form-label fw-semibold"
+                                style="color: var(--color-marron-oscuro);">Instrucciones especiales:</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="3"
+                                placeholder="Ej: Empaque para regalo, alergias alimenticias, etc."></textarea>
                         </div>
-                        
+
                         <div class="d-grid mt-3">
                             <button type="submit" class="btn btn-confirmar">
                                 <i class="bi bi-cart-check me-2"></i> Confirmar Pedido
@@ -200,32 +191,32 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Validar antes de enviar
-    document.querySelector('form').addEventListener('submit', function(e) {
-        let hasItems = false;
-        document.querySelectorAll('input[name^="cantidad_"]').forEach(input => {
-            if (parseFloat(input.value) > 0) hasItems = true;
+    document.addEventListener('DOMContentLoaded', function () {
+        // Validar antes de enviar
+        document.querySelector('form').addEventListener('submit', function (e) {
+            let hasItems = false;
+            document.querySelectorAll('input[name^="cantidad_"]').forEach(input => {
+                if (parseFloat(input.value) > 0) hasItems = true;
+            });
+
+            if (!hasItems) {
+                e.preventDefault();
+                alert('Debe agregar al menos un producto a su pedido');
+                return false;
+            }
+
+            const fecha = new Date(document.getElementById('fecha_entrega').value);
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            if (fecha < new Date(hoy.setDate(hoy.getDate() + 2)) ||
+                fecha > new Date(hoy.setDate(hoy.getDate() + 28))) {
+                e.preventDefault();
+                alert('La fecha debe ser entre 2 y 30 días a partir de hoy');
+                return false;
+            }
         });
-        
-        if (!hasItems) {
-            e.preventDefault();
-            alert('Debe agregar al menos un producto a su pedido');
-            return false;
-        }
-        
-        const fecha = new Date(document.getElementById('fecha_entrega').value);
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        
-        if (fecha < new Date(hoy.setDate(hoy.getDate() + 2)) || 
-            fecha > new Date(hoy.setDate(hoy.getDate() + 28))) {
-            e.preventDefault();
-            alert('La fecha debe ser entre 2 y 30 días a partir de hoy');
-            return false;
-        }
     });
-});
 </script>
 
 {% endblock %}
