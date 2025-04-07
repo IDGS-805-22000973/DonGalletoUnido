@@ -14,7 +14,7 @@ from controller.cocina import chefCocinero
 from controller.cliente import cliente_bp
 
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 app.config.from_object(DevelopmentConfig)
 
 # Inicializar extenciones

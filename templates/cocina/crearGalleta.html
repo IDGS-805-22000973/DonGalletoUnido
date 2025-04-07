@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear Galleta</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+  {% block container %}
+
+  <div class="container mt-4">
+    <h2>Crear Galleta</h2>
+    <button type="button" class="btn btn-info mt-3" data-toggle="modal" data-target="#galletasModal"
+      onclick="cargarGalletas()">
+      <i class="mdi mdi-table"></i> Ver Galletas
+    </button>
+
+    <form method="POST">
+      {{ form.csrf_token }}
+      <div class="form-group">
+        <label for="nombre">Nombre de la galleta:</label>
+        <input type="text" name="nombre" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label for="receta_id">Receta:</label>
+        <select name="receta_id" class="form-control" required>
+          {% for receta in recetas %}
+          <option value="{{ receta.id }}">{{ receta.nombre_receta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="descripcion">Descripción:</label>
+        <textarea name="descripcion" class="form-control"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary mt-3">Crear Galleta</button>
+      <a href="{{ url_for('chefCocinero.getAll_receta') }}" class="btn btn-secondary mt-3">
+        <i class="mdi mdi-food-croissant"></i> Atras
+      </a>
+    </form>
+
+    <!-- Modal para mostrar las galletas registradas -->
+    <div class="modal fade" id="galletasModal" tabindex="-1" role="dialog" aria-labelledby="galletasModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="galletasModalLabel">Lista de Galletas</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <!-- Tabla de las galletas -->
+            <table class="table table-striped" id="galletasTable">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Receta</th>
+                  <th>Descripción</th>
+                  <th>Acciones</th> <!-- Nueva columna para los botones -->
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Aquí se llenarán las filas con JavaScript -->
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {% endblock %}
+
+
+  <script>
+    const csrfToken = "{{ form.csrf_token._value() }}";  // Obtener el CSRF token directamente desde Jinja
+  </script>
+
+  <!-- Script para cargar las galletas y eliminar -->
+  <script>
+    function cargarGalletas() {
+      // Hacer una solicitud AJAX para obtener las galletas
+      $.ajax({
+        url: '/obtener_galletas',  // El endpoint que creamos en Flask
+        type: 'GET',
+        success: function (data) {
+          var tableBody = $('#galletasTable tbody');
+          tableBody.empty(); // Limpiar la tabla antes de agregar los nuevos registros
+
+          if (data.length === 0) {
+            tableBody.append('<tr><td colspan="4" class="text-center">No hay galletas registradas</td></tr>');
+          } else {
+            // Iterar sobre las galletas y agregar cada una a la tabla
+            data.forEach(function (galleta) {
+              var row = '<tr>' +
+                '<td>' + galleta.nombre + '</td>' +
+                '<td>' + galleta.receta + '</td>' +
+                '<td>' + galleta.descripcion + '</td>' +
+                '<td>' +
+                '<button class="btn btn-danger btn-sm" onclick="eliminarGalleta(' + galleta.id + ')">Eliminar</button>' +
+                '</td>' +
+                '</tr>';
+              tableBody.append(row);
+            });
+          }
+        },
+        error: function () {
+          alert('Error al cargar las galletas.');
+        }
+      });
+    }
+
+    function eliminarGalleta(id) {
+      if (confirm('¿Estás seguro de que deseas eliminar esta galleta?')) {
+        $.ajax({
+          url: '/eliminar_galleta/' + id,
+          type: 'POST',
+          contentType: 'application/json',
+          headers: {
+            'X-CSRFToken': csrfToken  // Usa la variable JS que obtiene el valor del token CSRF
+          },
+          success: function (response) {
+            alert(response.mensaje);
+            cargarGalletas(); // Recarga la tabla de galletas
+          },
+          error: function (xhr) {
+            try {
+              const error = JSON.parse(xhr.responseText);
+              alert(error.error || 'Error al eliminar la galleta.');
+            } catch (e) {
+              alert('Error al eliminar la galleta.');
+            }
+          }
+        });
+      }
+    }
+  </script>
+
+</body>
+
+</html>

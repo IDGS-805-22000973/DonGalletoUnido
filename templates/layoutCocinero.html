@@ -22,10 +22,14 @@
 <body>
     <!-- Sidebar -->
     <div id="sidebar" class="sidebar expanded">
+
         <div class="logo-container">
             <img src="../static/img/DeliCookieWhite.png" alt="Logo" class="logo">
             <h4>DeliCookie</h4>
         </div>
+        <a href="{{ url_for('chefCocinero.getAll_receta') }}">
+            <i class="mdi mdi-food-croissant"></i><span>Recetas</span>
+        </a>
         <a href="#">
             <i class="bi bi-clipboard-data"></i><span>Insumos</span>
         </a>

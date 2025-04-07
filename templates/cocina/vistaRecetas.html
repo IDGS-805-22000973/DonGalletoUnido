@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario y Listado de Recetas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="../static/CSS/layoutCocinero.css" />
+</head>
+
+<body class="bg-light">
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar expanded d-flex flex-column">
+        <div class="logo-container">
+            <img src="../static/img/DeliCookieWhite.png" alt="Logo" class="logo">
+            <h4>DeliCookie</h4>
+        </div>
+
+        <nav class="flex-grow-1">
+            <a href="{{ url_for('chefCocinero.getAll_receta') }}">
+                <i class="mdi mdi-food-croissant"></i><span>Recetas</span>
+            </a>
+            <a href="#"><i class="bi bi-clipboard-data"></i><span>Insumos</span></a>
+            <a href="#"><i class="bi bi-menu-down"></i><span>Pedidos</span></a>
+            <a href="{{ url_for('chefCocinero.produccion') }}">
+                <i class="mdi mdi-food-croissant"></i><span>Producción</span>
+            </a>
+            <a href="{{ url_for('chefCocinero.inventario') }}">
+                <i class="mdi mdi-cookie"></i><span>Inventario Galletas</span>
+            </a>
+        </nav>
+
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-danger w-100 mt-auto">
+            <i class="bi bi-box-arrow-right"></i> Salir
+        </a>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="container mt-5 content">
+        <!-- Contenedor de botones y búsqueda -->
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{{ url_for('chefCocinero.agregar_receta') }}" class="btn btn-primary">
+                    <i class="mdi mdi-food-croissant"></i> Agregar Receta
+                </a>
+                <a href="{{url_for('chefCocinero.crear_galleta') }}" class="btn btn-info ms-2">
+                    <i class="mdi mdi-cookie"></i> Agregar Galleta
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Contenedor de botones y búsqueda -->
+        <div class="d-flex justify-content-between align-items-center">
+            <input type="text" id="searchInput" class="form-control w-25" placeholder="Buscar receta...">
+
+        </div>
+
+        <h2 class="mt-5">Lista de Recetas</h2>
+        <table class="table table-bordered table-striped" id="tabla_recetas">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre de la Receta</th>
+                    <th>Descripción</th>
+                    <th>Cantidad Galletas</th>
+                    <th>Tiempo Preparación</th>
+                    <th>Días Caducidad</th>
+                    <th>Activa</th>
+                    <th>Editar</th>
+                    <th>Eliminar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for receta in recetas %}
+                <tr>
+                    <td>{{ receta.nombre_receta }}</td>
+                    <td>{{ receta.descripcion }}</td>
+                    <td>{{ receta.cantidad_galletas_producidas }}</td>
+                    <td>{{ receta.tiempo_preparacion }} min</td>
+                    <td>{{ receta.dias_caducidad }} días</td>
+                    <td>{{ "Sí" if receta.activa else "No" }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#modalEditarReceta{{ receta.id }}">
+                            <i class="mdi mdi-pencil"></i> Editar
+                        </button>
+                    </td>
+                    <td class="text-center">
+                        <form method="POST" action="{{ url_for('chefCocinero.eliminar_receta', receta_id=receta.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                onclick="return confirm('¿Seguro que deseas eliminar esta receta?');">
+                                <i class="mdi mdi-delete"></i> Eliminar
+                            </button>
+                        </form>
+                    </td>
+
+
+                </tr>
+
+                <div class="modal fade" id="modalEditarReceta{{ receta.id }}" tabindex="-1"
+                    aria-labelledby="modalEditarRecetaLabel{{ receta.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Editar Receta</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="POST"
+                                    action="{{ url_for('chefCocinero.editar_receta', receta_id=receta.id) }}">
+                                    {{ form.csrf_token }}
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre de la Receta</label>
+                                        <input type="text" class="form-control" name="nombre_receta"
+                                            value="{{ receta.nombre_receta }}" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Descripción</label>
+                                        <textarea class="form-control" name="descripcion" rows="3"
+                                            required>{{ receta.descripcion }}</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Cantidad de Galletas Producidas</label>
+                                        <input type="number" class="form-control" name="cantidad_galletas_producidas"
+                                            value="{{ receta.cantidad_galletas_producidas }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Tiempo de Preparación (min)</label>
+                                        <input type="number" class="form-control" name="tiempo_preparacion"
+                                            value="{{ receta.tiempo_preparacion }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Días de Caducidad</label>
+                                        <input type="number" class="form-control" name="dias_caducidad"
+                                            value="{{ receta.dias_caducidad }}" required>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" name="activa" {% if
+                                            receta.activa %}checked{% endif %}>
+                                        <label class="form-check-label">Receta Activa</label>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <!-- Al final, antes de cerrar el body -->
+    <script>
+        document.getElementById("searchInput").addEventListener("input", function () {
+            let query = this.value;
+
+            fetch(`/buscar_recetas?query=${encodeURIComponent(query)}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.querySelector("#tabla_recetas tbody").innerHTML = html;
+                })
+                .catch(error => console.error("Error al buscar recetas:", error));
+        });
+
+    </script>
+
+</body>
+
+</html>

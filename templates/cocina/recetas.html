@@ -1,0 +1,188 @@
+{% extends "layout.html" %}
+{% block container %}
+
+<link rel="stylesheet" href="../static/CSS/registrarReceta.css">
+
+<div class="container py-5">
+    <h2 class="text-center mb-4">Agregar Nueva Receta de Galletas</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form action="{{ url_for('chefCocinero.agregar_receta') }}" method="POST">
+                        {{form.csrf_token}}
+                        <div class="mb-3">
+                            <label for="nombreReceta" class="form-label">Nombre de la Receta:</label>
+                            <input type="text" class="form-control" id="nombreReceta" name="nombreReceta" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción:</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3"
+                                required></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cantidadGalletaProducida" class="form-label">Cantidad de Galletas
+                                    Producidas:</label>
+                                <input type="number" class="form-control" id="cantidadGalletaProducida"
+                                    name="cantidadGalletaProducida" min="1" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="diasCaducidad" class="form-label">Días de Caducidad:</label>
+                                <input type="number" class="form-control" id="diasCaducidad" name="diasCaducidad"
+                                    min="1" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="foto" class="form-label">Foto de la receta:</label>
+                                <input type="file" class="form-control" id="foto" name="foto" accept="image/*">
+                            </div>
+
+                        </div>
+                        <div class="mb-3">
+                            <label for="tiempoPreparacion" class="form-label">Tiempo de preparacion (minutos):</label>
+                            <input type="text" class="form-control" id="tiempoPreparacion" name="tiempoPreparacion"
+                                required>
+                        </div>
+
+
+                        <div class="mb-3">
+                            <label for="ingredienteSelect" class="form-label">Selecciona Ingrediente y Cantidad:</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <select id="ingredienteSelect" class="form-select" required>
+                                    <option value="">Selecciona un ingrediente</option>
+                                    {% for mp in materias_primas %}
+                                    <option value="{{ mp.id }}">{{ mp.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="number" class="form-control" id="cantidadInput" placeholder="Cantidad"
+                                    min="0.01" step="0.01">
+
+                                <select id="unidadInput" class="form-select" required>
+                                    <option value="g">Gramos</option>
+                                    <option value="pieza(s)">Pieza(s)</option>
+                                    <option value="ml">Mililitros</option>
+                                </select>
+
+                                <button type="button" class="btn btn-secondary" data-bs-toggle="modal"
+                                    data-bs-target="#modalIngredientes" onclick="agregarIngrediente()">
+                                    Agregar Ingrediente
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Contenedor oculto para enviar al backend -->
+                        <div id="ingredientesContainer"></div>
+
+                        <!-- Modal para mostrar ingredientes -->
+                        <div class="modal fade" id="modalIngredientes" tabindex="-1" aria-labelledby="modalLabel"
+                            aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="modalLabel">Ingredientes Agregados</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <table class="table table-bordered" id="tablaIngredientes">
+                                            <thead>
+                                                <tr>
+                                                    <th>Ingrediente</th>
+                                                    <th>Cantidad (g)</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Seguir
+                                            Agregando</button>
+                                        <button type="button" class="btn btn-primary"
+                                            data-bs-dismiss="modal">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <button type="submit" class="btn btn-primary w-100">Agregar Receta
+                            <a href="{{ url_for('chefCocinero.agregar_receta') }}">
+                                <i class="mdi mdi-food-croissant"></i><span></span>
+                            </a>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Función para agregar el ingrediente
+    function agregarIngrediente() {
+        const ingredienteSelect = document.getElementById('ingredienteSelect');
+        const cantidadInput = document.getElementById('cantidadInput');
+        const unidadInput = document.getElementById('unidadInput');
+
+        const ingredienteId = ingredienteSelect.value;
+        const ingredienteNombre = ingredienteSelect.options[ingredienteSelect.selectedIndex].text;
+        const cantidad = cantidadInput.value;
+        const unidad = unidadInput.value;
+
+        if (ingredienteId && cantidad) {
+            // Crear una nueva fila en la tabla del modal
+            const tablaIngredientes = document.getElementById('tablaIngredientes').getElementsByTagName('tbody')[0];
+            const nuevaFila = tablaIngredientes.insertRow();
+
+            const celdaIngrediente = nuevaFila.insertCell(0);
+            const celdaCantidad = nuevaFila.insertCell(1);
+            const celdaAcciones = nuevaFila.insertCell(2);
+
+            celdaIngrediente.textContent = ingredienteNombre;
+            celdaCantidad.textContent = `${cantidad} ${unidad}`;
+
+            // Botón para eliminar el ingrediente
+            const btnEliminar = document.createElement('button');
+            btnEliminar.textContent = 'Eliminar';
+            btnEliminar.classList.add('btn', 'btn-danger');
+            btnEliminar.onclick = function () {
+                nuevaFila.remove();
+                eliminarIngredienteDeContenedor(ingredienteId, cantidad, unidad);
+            };
+            celdaAcciones.appendChild(btnEliminar);
+
+            // Agregar el ingrediente al contenedor oculto para enviarlo al backend
+            agregarIngredienteContenedor(ingredienteId, cantidad, unidad);
+
+            // Limpiar los campos para agregar más ingredientes
+            cantidadInput.value = '';
+        }
+    }
+
+    // Función para agregar el ingrediente al contenedor oculto
+    function agregarIngredienteContenedor(ingredienteId, cantidad, unidad) {
+        const ingredientesContainer = document.getElementById('ingredientesContainer');
+        const inputHidden = document.createElement('input');
+        inputHidden.type = 'hidden';
+        inputHidden.name = 'ingredientes';
+        inputHidden.value = `${ingredienteId},${cantidad},${unidad}`;
+        ingredientesContainer.appendChild(inputHidden);
+    }
+
+    // Función para eliminar el ingrediente del contenedor oculto
+    function eliminarIngredienteDeContenedor(ingredienteId, cantidad, unidad) {
+        const inputs = document.getElementById('ingredientesContainer').getElementsByTagName('input');
+        for (let input of inputs) {
+            if (input.value === `${ingredienteId},${cantidad},${unidad}`) {
+                input.remove();
+                break;
+            }
+        }
+    }
+</script>
+
+{% endblock %}

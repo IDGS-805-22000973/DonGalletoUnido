@@ -58,10 +58,10 @@ class Receta(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre_receta = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text)
-    ingrediente_especial = db.Column(db.String(50), nullable=False)
     cantidad_galletas_producidas = db.Column(db.Integer, nullable=False)
     tiempo_preparacion = db.Column(db.Integer, nullable=False)
     dias_caducidad = db.Column(db.Integer, nullable=False)
+    foto_url = db.Column(db.String(255))
     activa = db.Column(db.Boolean, default=True)
     
     ingredientes = db.relationship('IngredienteReceta', backref='receta', cascade='all, delete-orphan')
@@ -74,6 +74,7 @@ class IngredienteReceta(db.Model):
     receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
     materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
     cantidad_necesaria = db.Column(db.Numeric(10,2), nullable=False)
+    unidad_medida = db.Column(db.Enum('gramo', 'mililitro', 'pieza', name='unidades_medida'), nullable=False)
     observaciones = db.Column(db.Text)
     
     materia_prima = db.relationship('MateriaPrima')
