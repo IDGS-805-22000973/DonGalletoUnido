@@ -1,28 +1,109 @@
 {% extends "layoutVentas.html" %}
 
 {% block container %}
-<div class="container-fluid">
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h4 class="m-0 font-weight-bold text-primary">
+
+<style>
+    .card-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(58, 40, 18, 0.15);
+        border: 1px solid #6B553D;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background-color: #6B553D !important;
+        color: white !important;
+        padding: 15px 20px;
+    }
+    .titulo-seccion {
+        color: white;
+        margin-bottom: 0;
+    }
+    .btn-primario {
+        background-color: #A87008;
+        border-color: #6B553D;
+        color: white;
+    }
+    .btn-primario:hover {
+        background-color: #6B553D;
+        border-color: #3A2812;
+    }
+    .btn-info-custom {
+        background-color: #D67747;
+        border-color: #A87008;
+        color: white;
+    }
+    .btn-info-custom:hover {
+        background-color: #A87008;
+        border-color: #6B553D;
+    }
+    .form-control, .form-select {
+        border-color: #6B553D;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #A87008;
+        box-shadow: 0 0 0 0.25rem rgba(168, 112, 8, 0.25);
+    }
+    .table-custom thead {
+        background-color: #6B553D;
+        color: white;
+    }
+    .table-custom tbody tr:nth-child(even) {
+        background-color: rgba(232, 207, 193, 0.3);
+    }
+    .table-custom tbody tr:hover {
+        background-color: rgba(214, 119, 71, 0.2);
+    }
+    .table-custom tfoot {
+        background-color: rgba(107, 85, 61, 0.1);
+        font-weight: bold;
+    }
+    .modal-header-custom {
+        background-color: #6B553D !important;
+        color: white;
+    }
+    .card-total {
+        border-left: 4px solid #A87008;
+    }
+    .card-recibido {
+        border-left: 4px solid #6B553D;
+    }
+    .card-cambio {
+        border-left: 4px solid #D67747;
+    }
+    body {
+        background-color: #E8CFC1;
+    }
+    .modal-content {
+        border: 1px solid #6B553D;
+    }
+    .btn-close-white {
+        filter: invert(1);
+    }
+</style>
+<br>
+<div class="container-fluid mt-3">
+    <div class="card-container">
+        <div class="card-header card-header-custom py-3 d-flex justify-content-between align-items-center">
+            <h4 class="m-0 titulo-seccion">
                 <i class="fas fa-cash-register me-2"></i>Historial de Ventas
             </h4>
             <div class="d-flex">
                 <input type="date" class="form-control me-2" id="fecha_ventas" style="max-width: 200px;">
-                <button class="btn btn-primary" onclick="listarVentas()">
+                <button class="btn btn-primario" onclick="listarVentas()">
                     <i class="fas fa-search me-1"></i> Buscar
                 </button>
             </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="tablaVentas" width="100%" cellspacing="0">
-                    <thead class="table-dark">
+                <table class="table table-custom table-hover" id="tablaVentas" width="100%" cellspacing="0">
+                    <thead>
                         <tr>
                             <th>ID</th>
                             <th>Fecha/Hora</th>
-                            <th>Total</th>
-                            <th>Detalles</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-center">Detalles</th>
                         </tr>
                     </thead>
                     <tbody id="lista_ventas" class="align-middle">
@@ -31,7 +112,7 @@
                     <tfoot>
                         <tr>
                             <td colspan="2" class="text-end fw-bold">Total del día:</td>
-                            <td id="totalDia" class="fw-bold">$0.00</td>
+                            <td id="totalDia" class="text-end fw-bold">$0.00</td>
                             <td></td>
                         </tr>
                     </tfoot>
@@ -45,7 +126,7 @@
 <div class="modal fade" id="modalDetalles" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header modal-header-custom">
                 <h5 class="modal-title">
                     <i class="fas fa-receipt me-2"></i>Detalles de Venta
                 </h5>
@@ -65,8 +146,8 @@
                 </div>
                 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead class="table-light">
+                    <table class="table table-custom table-striped">
+                        <thead>
                             <tr>
                                 <th>Producto</th>
                                 <th>Presentación</th>
@@ -88,27 +169,27 @@
                 </div>
                 
                 <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="card border-success">
-                            <div class="card-body">
+                    <div class="col-md-6 mb-3">
+                        <div class="card card-recibido h-100">
+                            <div class="card-body text-center">
                                 <h6 class="card-title">Monto Recibido</h6>
-                                <h4 class="text-success" id="detalle-recibido"></h4>
+                                <h4 class="text-ganancias" id="detalle-recibido"></h4>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card border-info">
-                            <div class="card-body">
+                    <div class="col-md-6 mb-3">
+                        <div class="card card-cambio h-100">
+                            <div class="card-body text-center">
                                 <h6 class="card-title">Cambio</h6>
-                                <h4 class="text-info" id="detalle-cambio"></h4>
+                                <h4 class="text-cantidad" id="detalle-cambio"></h4>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="imprimirTicket()">
+                <button type="button" class="btn btn-outline-secundario" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primario" onclick="imprimirTicket()">
                     <i class="fas fa-print me-1"></i> Imprimir Ticket
                 </button>
             </div>
@@ -149,7 +230,7 @@ async function listarVentas() {
                     <td>${venta.fecha}</td>
                     <td class="text-end">$${total.toFixed(2)}</td>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-info" onclick="verDetalles(${venta.id})" title="Ver detalles">
+                        <button class="btn btn-sm btn-info-custom" onclick="verDetalles(${venta.id})" title="Ver detalles">
                             <i class="fas fa-eye"></i>
                         </button>
                     </td>
@@ -226,17 +307,5 @@ document.addEventListener('DOMContentLoaded', function() {
     listarVentas();
 });
 </script>
-
-<style>
-    #tablaVentas th {
-        white-space: nowrap;
-    }
-    .card-header {
-        background-color: #f8f9fa;
-    }
-    .table-hover tbody tr:hover {
-        background-color: rgba(0, 123, 255, 0.05);
-    }
-</style>
 
 {% endblock %}

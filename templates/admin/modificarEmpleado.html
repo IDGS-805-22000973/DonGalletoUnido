@@ -1,11 +1,67 @@
-{% extends "layout2.html" %}
+{% extends "admin/layoutAdmin.html" %}
 {% block container %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='CSS/registrarClientes.css') }}">
+<style>
+    .card-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(58, 40, 18, 0.15);
+        border: 1px solid #6B553D;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background-color: #6B553D !important;
+        color: white !important;
+        padding: 15px 20px;
+    }
+    .titulo-formulario {
+        color: white;
+        margin-bottom: 0;
+    }
+    .btn-primario {
+        background-color: #A87008;
+        border-color: #6B553D;
+        color: white;
+    }
+    .btn-primario:hover {
+        background-color: #6B553D;
+        border-color: #3A2812;
+    }
+    .btn-secundario {
+        background-color: #D67747;
+        border-color: #A87008;
+        color: white;
+    }
+    .btn-secundario:hover {
+        background-color: #A87008;
+        border-color: #6B553D;
+    }
+    .form-control, .form-select {
+        border-color: #6B553D;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #A87008;
+        box-shadow: 0 0 0 0.25rem rgba(168, 112, 8, 0.25);
+    }
+    .is-invalid {
+        border-color: #D67747;
+    }
+    .invalid-feedback {
+        color: #D67747;
+    }
+    body {
+        background-color: #E8CFC1;
+    }
+    .required-field::after {
+        content: " *";
+        color: #D67747;
+    }
+</style>
+
 <div class="container py-5">
-    <div class="card shadow-lg">
-        <div class="card-header bg-primary text-white">
-            <h3 class="mb-0">Modificar Empleado </h3>
+    <div class="card-container">
+        <div class="card-header card-header-custom">
+            <h3 class="titulo-formulario">Modificar Empleado</h3>
         </div>
         
         <div class="card-body">
@@ -16,7 +72,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre*</label>
+                            <label for="nombre" class="form-label required-field">Nombre</label>
                             <input type="text" class="form-control {{ 'is-invalid' if form.nombre.errors }}" 
                                    id="nombre" name="nombre" value="{{ form.nombre.data }}" required>
                             {% for error in form.nombre.errors %}
@@ -27,7 +83,7 @@
                     
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email*</label>
+                            <label for="email" class="form-label required-field">Email</label>
                             <input type="email" class="form-control {{ 'is-invalid' if form.email.errors }}" 
                                    id="email" name="email" value="{{ form.email.data }}" required>
                             {% for error in form.email.errors %}
@@ -49,7 +105,7 @@
                     
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="telefono" class="form-label">Teléfono*</label>
+                            <label for="telefono" class="form-label required-field">Teléfono</label>
                             <input type="tel" class="form-control {{ 'is-invalid' if form.telefono.errors }}" 
                                    id="telefono" name="telefono" value="{{ form.telefono.data }}" required>
                             {% for error in form.telefono.errors %}
@@ -60,7 +116,7 @@
                     
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="rol" class="form-label">Rol*</label>
+                            <label for="rol" class="form-label required-field">Rol</label>
                             <select class="form-select {{ 'is-invalid' if form.rol.errors }}" 
                                     id="rol" name="rol" required>
                                 <option value="Ventas" {% if form.rol.data == 'Ventas' %}selected{% endif %}>Ventas</option>
@@ -76,7 +132,7 @@
                     
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="fechaRegistro" class="form-label">Fecha de Registro*</label>
+                            <label for="fechaRegistro" class="form-label required-field">Fecha de Registro</label>
                             <input type="date" class="form-control {{ 'is-invalid' if form.fechaRegistro.errors }}" 
                                    id="fechaRegistro" name="fechaRegistro" value="{{ form.fechaRegistro.data.strftime('%Y-%m-%d') if form.fechaRegistro.data else '' }}" required>
                             {% for error in form.fechaRegistro.errors %}
@@ -87,7 +143,7 @@
                     
                     <div class="col-12">
                         <div class="mb-3">
-                            <label for="direccion" class="form-label">Dirección*</label>
+                            <label for="direccion" class="form-label required-field">Dirección</label>
                             <textarea class="form-control {{ 'is-invalid' if form.direccion.errors }}" 
                                       id="direccion" name="direccion" rows="3" required>{{ form.direccion.data }}</textarea>
                             {% for error in form.direccion.errors %}
@@ -98,8 +154,8 @@
                     
                     <div class="col-12">
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ url_for('admin.ABCempleados') }}" class="btn btn-secondary me-md-2">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                            <a href="{{ url_for('admin.ABCempleados') }}" class="btn btn-secundario me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primario">Guardar Cambios</button>
                         </div>
                     </div>
                 </div>

@@ -1,83 +1,134 @@
 {% extends "layoutCocinero.html" %}
 {% block container %}
 
+<style>
+    .form-transparente {
+        background-color: rgba(255, 255, 255, 0.85);
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(58, 40, 18, 0.1);
+        border: 1px solid #6B553D;
+    }
+    .titulo-seccion {
+        color: #3A2812;
+        border-bottom: 2px solid #D67747;
+        padding-bottom: 8px;
+    }
+    .btn-primario {
+        background-color: #A87008;
+        border-color: #6B553D;
+        color: white;
+    }
+    .btn-primario:hover {
+        background-color: #6B553D;
+        border-color: #3A2812;
+    }
+    .btn-secundario {
+        background-color: #D67747;
+        border-color: #A87008;
+        color: white;
+    }
+    .btn-secundario:hover {
+        background-color: #A87008;
+        border-color: #6B553D;
+    }
+    .btn-eliminar {
+        background-color: #D67747;
+        border-color: #D67747;
+        color: white;
+    }
+    .form-control, .form-select {
+        border-color: #6B553D;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #A87008;
+        box-shadow: 0 0 0 0.25rem rgba(168, 112, 8, 0.25);
+    }
+    body {
+        background-color: #E8CFC1;
+    }
+</style>
+
 <br>
 <div class="container mt-4">
-    <h2 class="mb-4">Crear Nueva Receta</h2>
+    <h2 class="mb-4 titulo-seccion">Crear Nueva Receta</h2>
     
-    <form id="formReceta" method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <label for="nombre_receta" class="form-label">Nombre de la Receta</label>
-                <input type="text" class="form-control" id="nombre_receta" name="nombre_receta" required>
+    <div class="form-transparente">
+        <form id="formReceta" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="nombre_receta" class="form-label">Nombre de la Receta</label>
+                    <input type="text" class="form-control" id="nombre_receta" name="nombre_receta" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="peso_galleta" class="form-label">Peso por Galleta (gramos)</label>
+                    <input type="number" class="form-control" id="peso_galleta" name="peso_galleta" value="100" min="1" required>
+                </div>
             </div>
-            <div class="col-md-6">
-                <label for="peso_galleta" class="form-label">Peso por Galleta (gramos)</label>
-                <input type="number" class="form-control" id="peso_galleta" name="peso_galleta" value="100" min="1" required>
+            
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="2"></textarea>
+                </div>
             </div>
-        </div>
-        
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <label for="descripcion" class="form-label">Descripción</label>
-                <textarea class="form-control" id="descripcion" name="descripcion" rows="2"></textarea>
-            </div>
-        </div>
-        
-        <div class="row mb-3">
-            <div class="col-md-3">
-                <label for="tiempo_preparacion" class="form-label">Tiempo (min)</label>
-                <input type="number" class="form-control" id="tiempo_preparacion" name="tiempo_preparacion" required>
-            </div>
-            <div class="col-md-3">
-                <label for="dias_caducidad" class="form-label">Días Caducidad</label>
-                <input type="number" class="form-control" id="dias_caducidad" name="dias_caducidad" required>
-            </div>
-            <div class="col-md-3">
-                <label for="porcentaje_ganancia" class="form-label">% Ganancia</label>
-                <input type="number" step="0.1" class="form-control" id="porcentaje_ganancia" name="porcentaje_ganancia" value="70" required>
-            </div>
-        </div>
-        
-        <h4 class="mt-4">Ingredientes</h4>
-        <div id="ingredientes-container">
-            <div class="ingrediente-row row mb-3">
-                <div class="col-md-5">
-                    <label class="form-label">Ingrediente</label>
-                    <select class="form-control ingrediente-select" name="ingredientes[]" required>
-                        <option value="">Seleccionar...</option>
-                        {% for mp in materias_primas %}
-                        <option value="{{ mp.id }}" data-unidad="{{ mp.unidad_medida }}">{{ mp.nombre }}</option>
-                        {% endfor %}
-                    </select>
+            
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label for="tiempo_preparacion" class="form-label">Tiempo de Preparacion (min)</label>
+                    <input type="number" class="form-control" id="tiempo_preparacion" name="tiempo_preparacion" required>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Cantidad</label>
-                    <input type="number" step="0.01" class="form-control cantidad-input" name="cantidades[]" required>
+                    <label for="dias_caducidad" class="form-label">Días Caducidad</label>
+                    <input type="number" class="form-control" id="dias_caducidad" name="dias_caducidad" required>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Unidad</label>
-                    <select class="form-control unidad-select" name="unidades[]" required>
-                        <option value="">Seleccionar...</option>
-                    </select>
-                </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="button" class="btn btn-danger btn-remove-ingrediente">✕</button>
+                    <label for="porcentaje_ganancia" class="form-label">% Ganancia</label>
+                    <input type="number" step="0.1" class="form-control" id="porcentaje_ganancia" name="porcentaje_ganancia" value="70" required>
                 </div>
             </div>
-        </div>
-        
-        <button type="button" id="btn-add-ingrediente" class="btn btn-secondary mb-4">
-            ➕ Agregar Ingrediente
-        </button>
-        
-        <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary btn-lg">Guardar Receta</button>
-        </div>
-    </form>
+            
+            <h4 class="mt-4 titulo-seccion">Ingredientes</h4>
+            <div id="ingredientes-container">
+                <div class="ingrediente-row row mb-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Ingrediente</label>
+                        <select class="form-select ingrediente-select" name="ingredientes[]" required>
+                            <option value="">Seleccionar...</option>
+                            {% for mp in materias_primas %}
+                            <option value="{{ mp.id }}" data-unidad="{{ mp.unidad_medida }}">{{ mp.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" step="0.01" class="form-control cantidad-input" name="cantidades[]" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Unidad</label>
+                        <select class="form-select unidad-select" name="unidades[]" required>
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-eliminar btn-remove-ingrediente">✕</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" id="btn-add-ingrediente" class="btn btn-secundario mb-4">
+                + Agregar Ingrediente
+            </button>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primario btn-lg">Guardar Receta</button>
+            </div>
+        </form>
+    </div>
 </div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

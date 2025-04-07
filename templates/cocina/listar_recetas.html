@@ -1,61 +1,114 @@
 {% extends "layoutCocinero.html" %}
 
 {% block container %}
-<div class="container">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <h2>Listado de Recetas</h2>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Galletas Producidas</th>
-                <th>Tiempo Prep.</th>
-                <th>Caducidad</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for receta in recetas %}
-            <tr>
-                <td>{{ receta.nombre_receta }}</td>
-                <td>{{ receta.cantidad_galletas_producidas }}</td>
-                <td>{{ receta.tiempo_preparacion }} min</td>
-                <td>{{ receta.dias_caducidad }} días</td>
-                <td>
-                    <span class="badge bg-{{ 'success' if receta.activa else 'danger' }}">
-                        {{ 'Activa' if receta.activa else 'Inactiva' }}
-                    </span>
-                </td>
-                <td>
-                    <div class="btn-group" role="group">
-                        <a href="{{ url_for('chefCocinero.detalle_receta', id=receta.id) }}" class="btn btn-info btn-sm">Detalle</a>
-                        <a href="{{ url_for('chefCocinero.modificar_receta', id=receta.id) }}" class="btn btn-warning btn-sm">Modificar</a>
-                        <form method="POST" action="{{ url_for('chefCocinero.cambiar_estado_receta', id=receta.id) }}" style="display: inline;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-{{ 'danger' if receta.activa else 'success' }} btn-sm">
-                                {{ 'Desactivar' if receta.activa else 'Activar' }}
-                            </button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <a href="{{ url_for('chefCocinero.crear_receta') }}" class="btn btn-primary">Nueva Receta</a>
+
+<style>
+    .card-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(58, 40, 18, 0.15);
+        padding: 25px;
+        border: 1px solid #6B553D;
+    }
+    .titulo-seccion {
+        color: #3A2812;
+        border-bottom: 2px solid #D67747;
+        padding-bottom: 8px;
+        margin-bottom: 20px;
+    }
+    .btn-primario {
+        background-color: #A87008;
+        border-color: #6B553D;
+        color: white;
+    }
+    .btn-primario:hover {
+        background-color: #6B553D;
+        border-color: #3A2812;
+    }
+    .table-custom {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .table-custom thead {
+        background-color: #6B553D;
+        color: white;
+    }
+    .table-custom th {
+        padding: 12px 15px;
+    }
+    .table-custom td {
+        padding: 10px 15px;
+    }
+    .table-custom tbody tr:nth-child(even) {
+        background-color: #F8F1EC;
+    }
+    body {
+        background-color: #E8CFC1;
+    }
+    .badge-activa {
+        background-color: #6B553D;
+        color: white;
+    }
+    .badge-inactiva {
+        background-color: #D67747;
+        color: white;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="card-container">
+        <h2 class="titulo-seccion">Listado de Recetas</h2>
+        
+        <div class="table-responsive">
+            <table class="table table-custom">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Galletas Producidas</th>
+                        <th>Tiempo Prep.</th>
+                        <th>Caducidad</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receta in recetas %}
+                    <tr>
+                        <td>{{ receta.nombre_receta }}</td>
+                        <td>{{ receta.cantidad_galletas_producidas }}</td>
+                        <td>{{ receta.tiempo_preparacion }} min</td>
+                        <td>{{ receta.dias_caducidad }} días</td>
+                        <td>
+                            <span class="badge badge-{{ 'activa' if receta.activa else 'inactiva' }}">
+                                {{ 'Activa' if receta.activa else 'Inactiva' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <!-- Botones con colores originales -->
+                                <a href="{{ url_for('chefCocinero.detalle_receta', id=receta.id) }}" class="btn btn-info btn-sm">Detalle</a>
+                                <a href="{{ url_for('chefCocinero.modificar_receta', id=receta.id) }}" class="btn btn-warning btn-sm">Modificar</a>
+                                <form method="POST" action="{{ url_for('chefCocinero.cambiar_estado_receta', id=receta.id) }}" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-{{ 'danger' if receta.activa else 'success' }} btn-sm">
+                                        {{ 'Desactivar' if receta.activa else 'Activar' }}
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="d-flex justify-content-end mt-3">
+            <a href="{{ url_for('chefCocinero.crear_receta') }}" class="btn btn-primario">
+                <i class="fas fa-plus"></i> Nueva Receta
+            </a>
+        </div>
+    </div>
 </div>
+
 {% endblock %}
-
-
-
-
-
-

@@ -369,8 +369,8 @@ def crear_receta():
             db.session.commit()
             
             flash(
-                f'✅ Receta creada: {cantidad_galletas} galletas de {peso_galleta}g\n'
-                f'💰 Costo: ${round(costo_por_galleta, 2)} c/u | '
+                f'Receta creada: {cantidad_galletas} galletas de {peso_galleta}g\n'
+                f'Costo: ${round(costo_por_galleta, 2)} c/u | '
                 f'Precio: ${round(precio_venta, 2)} | '
                 f'Ganancia: {round(((precio_venta - costo_por_galleta) / costo_por_galleta * 100), 1)}%',
                 'success'
@@ -468,9 +468,21 @@ def detalle_receta(id):
 @cocina_required
 def cambiar_estado_receta(id):
     receta = Receta.query.get_or_404(id)
-    receta.activa = not receta.activa
+    nuevo_estado = not receta.activa
+    receta.activa = nuevo_estado
+    
+    # Si se está desactivando la receta, buscar y desactivar la galleta asociada
+    if not nuevo_estado:
+        galleta_asociada = Galleta.query.filter_by(receta_id=receta.id).first()
+        if galleta_asociada:
+            galleta_asociada.activa = False
+            flash(f'Receta {receta.nombre_receta} y su galleta asociada han sido desactivadas', 'warning')
+        else:
+            flash(f'Receta {receta.nombre_receta} desactivada (no tenía galleta asociada)', 'success')
+    else:
+        flash(f'Receta {receta.nombre_receta} activada correctamente', 'success')
+    
     db.session.commit()
-    flash(f'Receta {receta.nombre_receta} {"activada" if receta.activa else "desactivada"} correctamente', 'success')
     return redirect(url_for('chefCocinero.listar_recetas'))
 
 

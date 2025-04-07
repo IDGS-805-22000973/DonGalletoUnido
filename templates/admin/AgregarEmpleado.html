@@ -1,23 +1,86 @@
 {% extends "admin/layoutAdmin.html" %}
 {% block container %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='CSS/registrarClientes.css') }}">
-
+<style>
+    .card-container {
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(58, 40, 18, 0.15);
+        border: 1px solid #6B553D;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background-color: #6B553D !important;
+        color: white !important;
+    }
+    .titulo-seccion {
+        color: #3A2812;
+        border-bottom: 2px solid #D67747;
+        padding-bottom: 8px;
+        margin-bottom: 20px;
+    }
+    .btn-primario {
+        background-color: #A87008;
+        border-color: #6B553D;
+        color: white;
+        font-weight: 600;
+        padding: 12px;
+    }
+    .btn-primario:hover {
+        background-color: #6B553D;
+        border-color: #3A2812;
+    }
+    .btn-volver {
+        background-color: #D67747;
+        border-color: #A87008;
+        color: white;
+    }
+    .btn-volver:hover {
+        background-color: #A87008;
+        border-color: #6B553D;
+    }
+    .form-control, .form-select {
+        border-color: #6B553D;
+        border-radius: 5px;
+        padding: 10px;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #A87008;
+        box-shadow: 0 0 0 0.25rem rgba(168, 112, 8, 0.25);
+    }
+    .is-invalid {
+        border-color: #D67747;
+    }
+    .invalid-feedback {
+        color: #D67747;
+    }
+    .required-field::after {
+        content: " *";
+        color: #D67747;
+    }
+    body {
+        background-color: #E8CFC1;
+    }
+    .text-muted {
+        color: #6B553D !important;
+    }
+</style>
+<br>
 <div class="container py-5">
-    <h2 class="text-center mb-4">Registro de Empleado</h2>
-    <a href="{{ url_for('admin.ABCempleados') }}" class="btn btn-outline-secondary mb-4">
+    <h2 class="text-center titulo-seccion">Registro de Empleado</h2>
+    <a href="{{ url_for('admin.ABCempleados') }}" class="btn btn-volver mb-4">
         <i class="bi bi-arrow-left"></i> Volver
     </a>
     
-    <div class="card shadow-sm" style="background-color: #ffffff;">  <!-- Fondo blanco -->
-        <div class="card-body p-4">  <!-- Padding interno -->
+    <div class="card-container">
+        <div class="card-body p-4">
             <form method="POST" action="{{ url_for('admin.agregarEmpleado') }}" novalidate>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre Completo*</label>
+                            <label for="nombre" class="form-label required-field">Nombre Completo</label>
                             <input type="text" class="form-control {{ 'is-invalid' if form.nombre.errors }}" 
                                    id="nombre" name="nombre" value="{{ form.nombre.data or '' }}" required>
                             {% for error in form.nombre.errors %}
@@ -28,7 +91,7 @@
                     
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email*</label>
+                            <label for="email" class="form-label required-field">Email</label>
                             <input type="email" class="form-control {{ 'is-invalid' if form.email.errors }}" 
                                    id="email" name="email" value="{{ form.email.data or '' }}" required>
                             {% for error in form.email.errors %}
@@ -39,10 +102,10 @@
                     
                     <div class="col-12">
                         <div class="mb-3">
-                            <label for="password" class="form-label">Contraseña*</label>
+                            <label for="password" class="form-label required-field">Contraseña</label>
                             <input type="password" class="form-control {{ 'is-invalid' if form.password.errors }}" 
                                    id="password" name="password" required>
-                            <small class="form-text text-muted">Mínimo 8 caracteres</small>
+                            <small class="form-text">Mínimo 8 caracteres</small>
                             {% for error in form.password.errors %}
                                 <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
@@ -51,7 +114,7 @@
                     
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="telefono" class="form-label">Teléfono*</label>
+                            <label for="telefono" class="form-label required-field">Teléfono</label>
                             <input type="tel" class="form-control {{ 'is-invalid' if form.telefono.errors }}" 
                                    id="telefono" name="telefono" value="{{ form.telefono.data or '' }}" required>
                             {% for error in form.telefono.errors %}
@@ -62,11 +125,12 @@
                     
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="rol" class="form-label">Tipo de Usuario*</label>
+                            <label for="rol" class="form-label required-field">Tipo de Usuario</label>
                             <select class="form-select {{ 'is-invalid' if form.rol.errors }}" id="rol" name="rol" required>
                                 <option value="">Seleccione un rol</option>
-                                <option value="Ventas">Ventas</option>
-                                <option value="Cocina">Cocina</option>
+                                <option value="Ventas" {% if form.rol.data == 'Ventas' %}selected{% endif %}>Ventas</option>
+                                <option value="Cocina" {% if form.rol.data == 'Cocina' %}selected{% endif %}>Cocina</option>
+                                <option value="Admin" {% if form.rol.data == 'Admin' %}selected{% endif %}>Administrador</option>
                             </select>
                             {% for error in form.rol.errors %}
                                 <div class="invalid-feedback">{{ error }}</div>
@@ -76,7 +140,7 @@
                     
                     <div class="col-12">
                         <div class="mb-3">
-                            <label for="direccion" class="form-label">Dirección*</label>
+                            <label for="direccion" class="form-label required-field">Dirección</label>
                             <textarea class="form-control {{ 'is-invalid' if form.direccion.errors }}" 
                                       id="direccion" name="direccion" rows="2" required>{{ form.direccion.data or '' }}</textarea>
                             {% for error in form.direccion.errors %}
@@ -87,7 +151,7 @@
                     
                     <div class="col-12">
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Registrarse</button>
+                            <button type="submit" class="btn btn-primario btn-lg">Registrar Empleado</button>
                         </div>
                     </div>
                 </div>
@@ -95,26 +159,5 @@
         </div>
     </div>
 </div>
-
-<style>
-    /* Estilos adicionales para mejorar la apariencia */
-    .card {
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
-    }
-    .form-control, .form-select {
-        border-radius: 5px;
-        padding: 10px;
-    }
-    .btn-primary {
-        background-color: #4e73df;
-        border: none;
-        padding: 12px;
-        font-weight: 600;
-    }
-    .btn-outline-secondary {
-        border-radius: 5px;
-    }
-</style>
 
 {% endblock %}

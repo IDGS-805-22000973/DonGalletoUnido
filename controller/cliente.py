@@ -20,7 +20,7 @@ PRESENTACIONES = {
 def menuCliente():
     # Configurar fechas
     hoy = datetime.now().date()
-    min_date = hoy + timedelta(days=2)
+    min_date = hoy + timedelta(days=1)
     max_date = hoy + timedelta(days=30)
     
     galletas_activas = Galleta.query.filter_by(activa=True).all()
