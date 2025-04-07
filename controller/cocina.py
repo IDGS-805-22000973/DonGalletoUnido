@@ -201,7 +201,6 @@ def agregar_receta():
                 if not os.path.exists(filepath):
                     raise Exception("Error al guardar la imagen")
 
-                # ✅ Ruta accesible para templates
                 foto_url = f'/static/uploads/recetas/{filename}'
                 print(f"[DEBUG] Foto guardada: {foto_url}")  # Para verificar que se asigna correctamente
 
