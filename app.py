@@ -13,6 +13,8 @@ from controller.admin import admin_bp
 from controller.ventas import ventas_bp
 from controller.cocina import chefCocinero
 from controller.cliente import cliente_bp
+from controller.proveedor import proveedores_bp
+from controller.pagoProveedor import pago_proveedor_bp
 
 
 app = Flask(__name__)
@@ -48,6 +50,8 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(ventas_bp, url_prefix='/ventas')
 app.register_blueprint(chefCocinero)
 app.register_blueprint(cliente_bp)
+app.register_blueprint(proveedores_bp)
+app.register_blueprint(pago_proveedor_bp)
 
 @app.route('/')
 def index():

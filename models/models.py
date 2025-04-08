@@ -1,7 +1,11 @@
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Numeric
-from datetime import datetime
+from flask import url_for
 from flask_login import UserMixin
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Numeric, Enum
+from datetime import datetime, timedelta, date
+from sqlalchemy.dialects.mysql import ENUM
+from sqlalchemy.orm import validates
+from decimal import Decimal
 
 db = SQLAlchemy()
 
@@ -18,6 +22,8 @@ class Usuarios(db.Model, UserMixin):
     two_factor_secret = db.Column(db.String(255))  # Almacena el secreto para 2FA
     two_factor_enabled = db.Column(db.Boolean, default=False)  # Si tiene 2FA activado
 
+
+
 class Proveedor(db.Model):
     __tablename__ = 'proveedores'
     
@@ -29,32 +35,105 @@ class Proveedor(db.Model):
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
 
 class PagoProveedor(db.Model):
-    __tablename__ = 'pago_proveedores'
+    __tablename__ = 'pagos_proveedores'
     
     id = db.Column(db.Integer, primary_key=True)
-    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedores.id'), nullable=False)
-    cantidad_pago = db.Column(db.Integer, nullable=False)
-    ingrediente = db.Column(db.String(100), nullable=False)
-    cantidad_ingrediente = db.Column(db.Integer, nullable=False)
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedores.id'))
+    materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'))
+    cantidad_pago = db.Column(db.Numeric(10, 2), nullable=False)
+    fecha_pago = db.Column(db.DateTime, default=datetime.utcnow)
+    ingrediente = db.Column(db.String(100))
+    cantidad_ingrediente = db.Column(db.Numeric(10, 2))
+    precio_unitario = db.Column(db.Numeric(10, 2))
+    unidad_medida = db.Column(db.String(20))
+    pago_verificado = db.Column(db.Boolean, default=False)
     
+    # Relaciones
     proveedor = db.relationship('Proveedor', backref='pagos')
+
+    materia_prima = db.relationship('MateriaPrima', backref='pagos')
+    @validates('cantidad_ingrediente', 'precio_unitario', 'cantidad_pago')
+    def validate_positive_values(self, key, value):
+        """Valida que los valores numéricos sean positivos"""
+        if value is not None and Decimal(str(value)) <= 0:
+            raise ValueError(f"{key} debe ser un valor positivo")
+        return value
+
 
 class MateriaPrima(db.Model):
     __tablename__ = 'materias_primas'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedores.id'), nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text)
-    unidad_medida = db.Column(db.Enum('gramo', 'kilogramo', 'litro', 'mililitro', 'pieza', 'bulto', name='unidades_medida'), nullable=False)
-    cantidad_disponible = db.Column(db.Numeric(10,2), default=0, nullable=False)
-    cantidad_minima = db.Column(db.Numeric(10,2), default=0, nullable=False)
-    precio_compra = db.Column(db.Numeric(10,2), nullable=False)
+    unidad_almacenamiento = db.Column(ENUM('gramo', 'mililitro', 'pieza', name='unidades_almacenamiento'), nullable=False)
+    unidad_medida = db.Column(ENUM('kilogramo', 'kilogramos', 'litro', 'litros', 'bulto', 'bultos', 'pieza', 'piezas', name='unidades_medida'), nullable=False)
+    cantidad_disponible = db.Column(db.Numeric(10, 2), default=0, nullable=False)
+    cantidad_minima = db.Column(db.Numeric(10, 2), default=0, nullable=False)
+    precio_compra = db.Column(db.Numeric(10, 2), nullable=False)
     fecha_caducidad = db.Column(db.Date)
     fecha_ultima_compra = db.Column(db.Date)
-    activa = db.Column(db.Boolean, default=True)  # Añade esta línea
-    
+    activa = db.Column(db.Boolean, default=True) 
+
     proveedor = db.relationship('Proveedor', backref='materias_primas')
+    
+    @property
+    def es_bajo_stock(self):
+        """Determina si el stock está por debajo del mínimo, considerando conversión de unidades"""
+        try:
+            if self.unidad_medida == 'kilogramo' and self.unidad_almacenamiento == 'gramo':
+                cantidad_min_convertida = self.cantidad_minima * 1000
+            elif self.unidad_medida == 'litro' and self.unidad_almacenamiento == 'mililitro':
+                cantidad_min_convertida = self.cantidad_minima * 1000
+            else:
+                cantidad_min_convertida = self.cantidad_minima
+                
+            return self.cantidad_disponible < Decimal(str(cantidad_min_convertida))
+        except Exception as e:
+            app.logger.error(f"Error calculando bajo stock: {str(e)}")
+            return False
+    
+    @property
+    def porcentaje_stock(self):
+        """Devuelve el porcentaje de stock disponible respecto al mínimo"""
+        try:
+            if self.cantidad_minima <= 0:
+                return 100
+                
+            if self.unidad_medida == 'kilogramo' and self.unidad_almacenamiento == 'gramo':
+                cantidad_min_convertida = self.cantidad_minima * 1000
+            elif self.unidad_medida == 'litro' and self.unidad_almacenamiento == 'mililitro':
+                cantidad_min_convertida = self.cantidad_minima * 1000
+            else:
+                cantidad_min_convertida = self.cantidad_minima
+                
+            return (self.cantidad_disponible / Decimal(str(cantidad_min_convertida))) * 100
+        except:
+            return 0
+            
+    @property
+    def esta_por_caducar(self):
+        """Determina si el producto está por caducar (15 días o menos)"""
+        try:
+            if not self.fecha_caducidad:
+                return False
+                
+            hoy = datetime.now().date()
+            
+            # Si fecha_caducidad es datetime, convertirlo a date
+            if isinstance(self.fecha_caducidad, datetime):
+                fecha_cad = self.fecha_caducidad.date()
+            else:
+                fecha_cad = self.fecha_caducidad
+                
+            dias_para_caducar = (fecha_cad - hoy).days
+            
+            # Considerar productos que ya caducaron o caducarán en 15 días
+            return dias_para_caducar <= 15
+        except Exception as e:
+            app.logger.error(f"Error verificando caducidad: {str(e)}")
+            return False
 
 class Receta(db.Model):
     __tablename__ = 'recetas'
@@ -82,6 +161,8 @@ class IngredienteReceta(db.Model):
     
     materia_prima = db.relationship('MateriaPrima')
 
+
+#Modificación de ModelGalletas
 class Galleta(db.Model):
     __tablename__ = 'galletas'
     
@@ -91,12 +172,17 @@ class Galleta(db.Model):
     costo_galleta = db.Column(db.Numeric(10,2), nullable=False)
     precio = db.Column(db.Numeric(10,2), nullable=False)
     descripcion = db.Column(db.Text)
+    url_imagen = db.Column(db.String(255))  
     activa = db.Column(db.Boolean, default=True)
     
     inventario = db.relationship('InventarioGalleta', backref='galleta')
     detalles_pedido = db.relationship('DetallePedido', backref='galleta')
     detalles_venta = db.relationship('DetalleVenta', backref='galleta')
     solicitudes = db.relationship('SolicitudProduccion', backref='galleta')
+    def imagen_url(self):
+        if self.url_imagen:
+            return url_for('static', filename=self.url_imagen.replace('static/', ''))
+        return url_for('static', filename='imagenGalletas/default.jpg')
 
 class InventarioGalleta(db.Model):
     __tablename__ = 'inventario_galletas'

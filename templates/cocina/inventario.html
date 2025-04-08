@@ -1,37 +1,43 @@
 {% extends "layoutCocinero.html" %}
 
 {% block container %}
-<div class="container-fluid">
-    <div class="container py-5 text-center"> <!-- Añadido text-center aquí -->
-        <div class="container p-2">
-            <h2>Inventario de Galletas <i class="mdi mdi-cookie"></i></h2>
+<div class="container-fluid py-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0">
+            <h2 class="text-center mb-0">
+                <i class="mdi mdi-cookie me-2"></i>Inventario de Galletas
+            </h2>
         </div>
-
-        <!-- Tabla de galletas -->
-        <div class="container mt-4">
-            <h3 class="mb-3">Lista de Galletas</h3>
-            <table class="table table-striped table-bordered text-center"> <!-- Añadido text-center aquí -->
-                <thead>
-                    <tr>
-                        <th>Nombre de la Galleta</th>
-                        <th>Cantidad en Inventario</th>
-                        <th>Presentación</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for galleta in inventario_data %}
-                    <tr>
-                        <td>{{ galleta.nombre }}</td>
-                        <td>{{ galleta.stock }}</td>
-                        <td>{{ galleta.descripcion }}</td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="3">No hay galletas en inventario.</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+        
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center">Nombre de la Galleta</th>
+                            <th class="text-center">Cantidad en Inventario</th>
+                            <th class="text-center">Presentación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for galleta in inventario_data %}
+                        <tr>
+                            <td class="text-center">{{ galleta.nombre }}</td>
+                            <td class="text-center">{{ galleta.stock }}</td>
+                            <td class="text-center">{{ galleta.descripcion }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4">
+                                <div class="alert alert-info mb-0">
+                                    No hay galletas en inventario
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

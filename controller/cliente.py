@@ -110,3 +110,4 @@ def misPedidos():
                          .order_by(Pedido.fecha_pedido.desc())\
                          .all()
     return render_template("cliente/misPedidos.html", pedidos=pedidos)
+

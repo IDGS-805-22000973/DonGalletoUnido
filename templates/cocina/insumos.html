@@ -1,0 +1,393 @@
+{% extends "layoutCocinero.html" %}
+{% import "cocina/_macros.html" as macros %}
+
+{% block container %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0 text-gray-800">
+            <i class="bi bi-box-seam me-2"></i>Gestión de Materia Prima
+        </h2>
+        <button type="button" class="btn btn-teal" data-bs-toggle="modal" data-bs-target="#agregarMateriaModal">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo Insumo
+        </button>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-gray-700">
+                        <i class="bi bi-boxes"></i> Total Insumos
+                    </h5>
+                    <p class="h2 text-teal">{{ materias_primas|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-gray-700">
+                        <i class="bi bi-exclamation-triangle text-amber-600"></i> Por Agotarse
+                    </h5>
+                    <p class="h2 text-amber-600">{{ materias_primas|selectattr('es_bajo_stock')|list|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-gray-700">
+                        <i class="bi bi-clock text-red-600"></i> Próximas a Caducar
+                    </h5>
+                    <p class="h2 text-red-600">{{ materias_primas|selectattr('esta_por_caducar')|list|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-gray-700">
+                        <i class="bi bi-check-circle text-teal"></i> En Óptimas Condiciones
+                    </h5>
+                    <p class="h2 text-teal">{{ materias_primas|rejectattr('es_bajo_stock')|rejectattr('esta_por_caducar')|list|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th><i class="bi bi-building"></i> Proveedor</th>
+                            <th><i class="bi bi-tag"></i> Insumo</th>
+                            <th><i class="bi bi-box"></i> Stock</th>
+                            <th><i class="bi bi-exclamation-circle"></i> Mínimo</th>
+                            <th><i class="bi bi-cash-stack"></i> Precio</th>
+                            <th><i class="bi bi-calendar-check"></i> Caducidad</th>
+                            <th><i class="bi bi-arrow-repeat"></i> Últ. Compra</th>
+                            <th><i class="bi bi-gear"></i> Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for materia in materias_primas %}
+                        <tr class="{% if materia.esta_por_caducar %}bg-red-50{% elif materia.es_bajo_stock %}bg-amber-50{% endif %}">
+                            <td>{{ materia.proveedor.nombre_proveedor }}</td>
+                            <td>
+                                <strong>{{ materia.nombre }}</strong>
+                                {% if materia.descripcion %}
+                                <br><small class="text-muted">{{ materia.descripcion|truncate(30) }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if materia.es_bajo_stock %}amber-100 text-amber-800{% else %}teal-100 text-teal-800{% endif %}">
+                                    {{ materia.cantidad_disponible|round(2) }} {{ get_unidad_display(materia.unidad_almacenamiento) }}
+                                    {% if materia.es_bajo_stock %}
+                                    <i class="bi bi-exclamation-circle ms-1"></i>
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="{% if materia.es_bajo_stock %}text-amber-600 fw-bold{% else %}text-gray-600{% endif %}">
+                                    {{ materia.cantidad_minima }} {{ get_unidad_original(materia.unidad_medida) }}
+                                </span>
+                            </td>
+                            <td class="text-nowrap">{{ format_currency(materia.precio_compra) }}</td>
+                            <td>
+                                {% if materia.fecha_caducidad %}
+                                    {% if materia.esta_por_caducar %}
+                                        <span class="badge bg-red-100 text-red-800">
+                                            <i class="bi bi-exclamation-triangle"></i> {{ materia.fecha_caducidad.strftime('%d/%m/%Y') }}
+                                        </span>
+                                    {% else %}
+                                        {{ materia.fecha_caducidad.strftime('%d/%m/%Y') }}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-gray-200 text-gray-700">No aplica</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if materia.fecha_ultima_compra %}
+                                    {{ materia.fecha_ultima_compra.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    <span class="badge bg-gray-200 text-gray-700">Nunca</span>
+                                {% endif %}
+                            </td>
+                            <td class="d-flex justify-content-center">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+                                    <a href="{{ url_for('chefCocinero.modificar_materia', id=materia.id) }}"
+                                        class="btn btn-outline-teal me-1"
+                                        title="Agregar stock">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </a>
+                                    <button class="btn btn-outline-teal me-1"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#detalleModal{{ materia.id }}"
+                                            title="Ver detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <form action="{{ url_for('chefCocinero.eliminar_materia', id=materia.id) }}" method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta materia prima?');">
+                                        {{ form.csrf_token }}
+                                        <button type="submit" class="btn btn-outline-danger"
+                                                title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="agregarMateriaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-teal text-white">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Registrar Nueva Materia Prima</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="materiaPrimaForm">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ macros.campoNuevo(form.proveedor_id, class="form-select") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ macros.campoNuevo(form.nombre, class="form-control", placeholder="Ej. Harina de trigo") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ macros.campoNuevo(form.descripcion, class="form-control", placeholder="Descripción detallada del insumo") }}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                {{ macros.campoNuevo(form.unidad_medida, class="form-select") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ macros.campoNuevo(form.cantidad_disponible, class="form-control") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ macros.campoNuevo(form.precio_compra, class="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ macros.campoNuevo(form.fecha_caducidad, class="form-control") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="materiaPrimaForm" class="btn btn-teal">Guardar Insumo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% for materia in materias_primas %}
+    <div class="modal fade" id="detalleModal{{ materia.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-teal text-white">
+                    <h5 class="modal-title">Detalles: {{ materia.nombre }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Proveedor:</strong>
+                            <p>{{ materia.proveedor.nombre_proveedor }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Stock Actual:</strong>
+                            <p>{{ materia.cantidad_disponible|round(2) }} {{ get_unidad_display(materia.unidad_almacenamiento) }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Stock Mínimo:</strong>
+                            <p>{{ materia.cantidad_minima }} {{ get_unidad_original(materia.unidad_medida) }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Precio Unitario:</strong>
+                            <p>{{ format_currency(materia.precio_compra) }}</p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Descripción:</strong>
+                        <p>{{ materia.descripcion or 'No especificada' }}</p>
+                    </div>
+                    {% if materia.fecha_caducidad %}
+                    <div class="alert alert-{% if materia.esta_por_caducar %}danger{% else %}info{% endif %} alert-dismissible fade show"
+                         role="alert">
+                        <i class="bi bi-calendar-event"></i>
+                        <strong>Fecha de Caducidad:</strong>
+                        {{ materia.fecha_caducidad.strftime('%d/%m/%Y') }}
+                        {% if materia.esta_por_caducar %}
+                        <br><i class="bi bi-exclamation-triangle"></i> Este producto está próximo a caducar
+                        {% endif %}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endif %}
+                    {% if materia.es_bajo_stock %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Atención:</strong> El stock de {{ materia.nombre }} es bajo.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-teal" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <style>
+        :root {
+            --teal: #008080;
+            --teal-light: #e6f2f2;
+            --teal-dark: #006666;
+            --amber-600: #d97706;
+            --amber-100: #fef3c7;
+            --amber-50: #fffbeb;
+            --red-600: #dc2626;
+            --red-100: #fee2e2;
+            --red-50: #fef2f2;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+        }
+
+        .text-teal { color: var(--teal); }
+        .text-gray-700 { color: var(--gray-700); }
+        .text-gray-800 { color: var(--gray-800); }
+        .text-amber-600 { color: var(--amber-600); }
+        .text-red-600 { color: var(--red-600); }
+
+        .bg-teal { background-color: var(--teal); }
+        .bg-gray-100 { background-color: var(--gray-100); }
+        .bg-amber-50 { background-color: var(--amber-50); }
+        .bg-red-50 { background-color: var(--red-50); }
+        .bg-amber-100 { background-color: var(--amber-100); }
+        .bg-red-100 { background-color: var(--red-100); }
+        .bg-teal-100 { background-color: var(--teal-light); }
+
+        .btn-teal {
+            background-color: var(--teal);
+            color: white;
+        }
+
+        .btn-teal:hover {
+            background-color: var(--teal-dark);
+            color: white;
+        }
+
+        .btn-outline-teal {
+            border: 1px solid var(--teal); /* Añadir borde */
+            color: var(--teal);
+        }
+
+        .btn-outline-teal:hover {
+            background-color: var(--teal);
+            color: white;
+        }
+
+        .btn-outline-danger {
+            border: 1px solid red; /* Añadir borde */
+            color: red;
+        }
+
+        .btn-outline-danger:hover {
+            background-color: red;
+            color: white;
+        }
+
+        .btn-outline-gray {
+            border-color: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-outline-gray:hover {
+            background-color: var(--gray-100);
+        }
+
+        .badge.bg-teal-100 {
+            background-color: var(--teal-light);
+            color: var(--teal-dark);
+        }
+
+        .badge.bg-amber-100 {
+            background-color: var(--amber-100);
+            color: var(--amber-600);
+        }
+
+        .badge.bg-red-100 {
+            background-color: var(--red-100);
+            color: var(--red-600);
+        }
+
+        .badge.bg-gray-200 {
+            background-color: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 128, 128, 0.05);
+        }
+
+        /* Estilos para hacer los botones uniformes y responsivos */
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            margin-bottom: 0; /* Eliminar margen inferior */
+        }
+
+        .btn-group-sm .btn i {
+            font-size: 1rem;
+        }
+
+        /* Espaciado entre botones */
+        .btn-group-sm .btn {
+            margin-right: 0.5rem; /* Añadir margen derecho */
+        }
+
+        .btn-group-sm .btn:last-child {
+            margin-right: 0; /* Eliminar margen derecho del último botón */
+        }
+
+        @media (max-width: 576px) {
+            .btn-group-sm .btn {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.75rem;
+            }
+
+            .btn-group-sm .btn i {
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+{% endblock %}

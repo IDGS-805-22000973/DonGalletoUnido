@@ -23,8 +23,8 @@ ventas_bp = Blueprint('ventas', __name__)
 @ventas_required
 def menuVentas():
     pedidos = Pedido.query.filter(Pedido.estado != 'Cancelado')\
-                         .order_by(Pedido.fecha_pedido.desc())\
-                         .all()
+                        .order_by(Pedido.fecha_pedido.desc())\
+                        .all()
     return render_template("ventas/menuVentas.html", pedidos=pedidos)
 
 @ventas_bp.route("/cambiar_estado/<int:pedido_id>", methods=["POST"])

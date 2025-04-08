@@ -1,0 +1,310 @@
+{% extends "layoutCocinero.html" %}
+{% import "cocina/_macros.html" as macros %}
+
+{% block container %}
+<div class="container-fluid py-4">
+    <h2 class="text-center mb-4 text-gray-800">
+        <i class="bi bi-cash-coin me-2"></i> Pagos a Proveedores
+    </h2>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-gray-700">
+                        <i class="bi bi-cash-stack text-success"></i> Total Pagado
+                    </h5>
+                    <p class="h2 text-success">{{ format_price(total_pagado) }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-gray-700">
+                        <i class="bi bi-check-circle text-primary"></i> Verificados
+                    </h5>
+                    <p class="h2 text-primary">{{ pagos_verificados }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-gray-700">
+                        <i class="bi bi-clock text-warning"></i> Pendientes
+                    </h5>
+                    <p class="h2 text-warning">{{ pagos_pendientes }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-gray-700">
+                        <i class="bi bi-list-ul text-info"></i> Total Pagos
+                    </h5>
+                    <p class="h2 text-info">{{ pagos|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-gray-100 text-gray-700">
+                        <tr>
+                            <th><i class="bi bi-key"></i> ID</th>
+                            <th><i class="bi bi-building"></i> Proveedor</th>
+                            <th><i class="bi bi-cash-stack"></i> Monto</th>
+                            <th><i class="bi bi-tag"></i> Unitario</th>
+                            <th><i class="bi bi-calendar-check"></i> Fecha</th>
+                            <th><i class="bi bi-box"></i> Ingrediente</th>
+                            <th><i class="bi bi-123"></i> Cantidad</th>
+                            <th><i class="bi bi-ruler"></i> Unidad</th>
+                            <th><i class="bi bi-flag"></i> Estado</th>
+                            <th><i class="bi bi-gear"></i> Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.id }}</td>
+                            <td>{{ pago.proveedor.nombre_proveedor }}</td>
+                            <td class="text-nowrap">{{ format_price(pago.cantidad_pago) }}</td>
+                            <td class="text-nowrap">{{ format_price(pago.precio_unitario) }}</td>
+                            <td>{{ pago.fecha_pago.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ pago.ingrediente }}</td>
+                            <td>{{ pago.cantidad_ingrediente|round(2) }}</td>
+                            <td>{{ pago.unidad_medida|capitalize }}</td>
+                            <td>
+                                {% if pago.pago_verificado %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Verificado</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="d-flex justify-content-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    {% if not pago.pago_verificado %}
+                                    <a href="{{ url_for('pagoProveedor.verificar_pago_endpoint', id=pago.id) }}" 
+                                       class="btn btn-outline-success me-1"
+                                       title="Verificar pago"
+                                       data-bs-toggle="tooltip">
+                                        <i class="bi bi-check-lg"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('pagoProveedor.eliminar_pago', id=pago.id) }}" 
+                                       class="btn btn-outline-danger me-1"
+                                       title="Eliminar pago"
+                                       data-bs-toggle="tooltip"
+                                       onclick="return confirm('¿Eliminar el pago #{{ pago.id }}?')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                    <button class="btn btn-outline-primary"
+                                            title="Detalles"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#detallePagoModal{{ pago.id }}"
+                                            data-bs-toggle="tooltip">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+
+                                <div class="modal fade" id="detallePagoModal{{ pago.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-primary text-white">
+                                                <h5 class="modal-title">Detalles del Pago #{{ pago.id }}</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row mb-2">
+                                                    <div class="col-md-6"><strong>Proveedor:</strong></div>
+                                                    <div class="col-md-6">{{ pago.proveedor.nombre_proveedor }}</div>
+                                                </div>
+                                                <div class="row mb-2">
+                                                    <div class="col-md-6"><strong>Fecha:</strong></div>
+                                                    <div class="col-md-6">{{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</div>
+                                                </div>
+                                                <div class="row mb-2">
+                                                    <div class="col-md-6"><strong>Ingrediente:</strong></div>
+                                                    <div class="col-md-6">{{ pago.ingrediente }}</div>
+                                                </div>
+                                                <div class="row mb-2">
+                                                    <div class="col-md-6"><strong>Cantidad:</strong></div>
+                                                    <div class="col-md-6">{{ pago.cantidad_ingrediente|round(2) }} {{ pago.unidad_medida }}</div>
+                                                </div>
+                                                <div class="row mb-2">
+                                                    <div class="col-md-6"><strong>Precio Unitario:</strong></div>
+                                                    <div class="col-md-6">{{ format_price(pago.precio_unitario) }}</div>
+                                                </div>
+                                                <div class="row mb-2">
+                                                    <div class="col-md-6"><strong>Total Pagado:</strong></div>
+                                                    <div class="col-md-6">{{ format_price(pago.cantidad_pago) }}</div>
+                                                </div>
+                                                <div class="row mb-2">
+                                                    <div class="col-md-6"><strong>Estado:</strong></div>
+                                                    <div class="col-md-6">
+                                                        {% if pago.pago_verificado %}
+                                                        <span class="badge bg-success">Verificado</span>
+                                                        {% else %}
+                                                        <span class="badge bg-warning text-dark">Pendiente</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --teal: #008080;
+        --teal-light: #e6f2f2;
+        --teal-dark: #006666;
+        --amber-600: #d97706;
+        --amber-100: #fef3c7;
+        --amber-50: #fffbeb;
+        --red-600: #dc2626;
+        --red-100: #fee2e2;
+        --red-50: #fef2f2;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+    }
+
+    .text-teal { color: var(--teal); }
+    .text-gray-700 { color: var(--gray-700); }
+    .text-gray-800 { color: var(--gray-800); }
+    .text-amber-600 { color: var(--amber-600); }
+    .text-red-600 { color: var(--red-600); }
+
+    .bg-teal { background-color: var(--teal); }
+    .bg-gray-100 { background-color: var(--gray-100); }
+    .bg-amber-50 { background-color: var(--amber-50); }
+    .bg-red-50 { background-color: var(--red-50); }
+    .bg-amber-100 { background-color: var(--amber-100); }
+    .bg-red-100 { background-color: var(--red-100); }
+    .bg-teal-100 { background-color: var(--teal-light); }
+
+    .btn-teal {
+        background-color: var(--teal);
+        color: white;
+    }
+
+    .btn-teal:hover {
+        background-color: var(--teal-dark);
+        color: white;
+    }
+
+    .btn-outline-teal {
+        border: 1px solid var(--teal);
+        color: var(--teal);
+    }
+
+    .btn-outline-teal:hover {
+        background-color: var(--teal);
+        color: white;
+    }
+
+    .btn-outline-danger {
+        border: 1px solid red;
+        color: red;
+    }
+
+    .btn-outline-danger:hover {
+        background-color: red;
+        color: white;
+    }
+
+    .btn-outline-gray {
+        border-color: var(--gray-200);
+        color: var(--gray-700);
+    }
+
+    .btn-outline-gray:hover {
+        background-color: var(--gray-100);
+    }
+
+    .badge.bg-teal-100 {
+        background-color: var(--teal-light);
+        color: var(--teal-dark);
+    }
+
+    .badge.bg-amber-100 {
+        background-color: var(--amber-100);
+        color: var(--amber-600);
+    }
+
+    .badge.bg-red-100 {
+        background-color: var(--red-100);
+        color: var(--red-600);
+    }
+
+    .badge.bg-gray-200 {
+        background-color: var(--gray-200);
+        color: var(--gray-700);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 128, 128, 0.05);
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        margin-bottom: 0;
+    }
+
+    .btn-group-sm .btn i {
+        font-size: 1rem;
+    }
+
+    .btn-group-sm .btn {
+        margin-right: 0.5rem;
+    }
+
+    .btn-group-sm .btn:last-child {
+        margin-right: 0;
+    }
+
+    @media (max-width: 576px) {
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-group-sm .btn i {
+            font-size: 0.875rem;
+        }
+    }
+
+    .text-nowrap {
+        white-space: nowrap;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

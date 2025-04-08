@@ -1,0 +1,63 @@
+{% extends "layoutCocinero.html" %}
+{% import "cocina/_macros.html" as macros %}
+
+{% block container %}
+<div class="container">
+    <h2 class="my-4">Actualizar Inventario</h2>
+    
+    <div class="card shadow">
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" value="{{ materia.nombre }}" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Unidad de Medida</label>
+                        <input type="text" class="form-control" value="{{ materia.unidad_medida }}" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Cantidad Actual</label>
+                        <input type="text" class="form-control" 
+                               value="{{ materia.cantidad_disponible }} {{ materia.unidad_almacenamiento }}" readonly>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        {{ form.cantidadAgregar.label(class="form-label") }}
+                        {{ form.cantidadAgregar(class="form-control") }}
+                        {% if form.cantidadAgregar.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.cantidadAgregar.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.precio_unitario.label(class="form-label") }}
+                        {{ form.precio_unitario(class="form-control") }}
+                        {% if form.precio_unitario.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.precio_unitario.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <strong>Nota:</strong> Al actualizar el inventario, se registrará automáticamente 
+                    un pago pendiente al proveedor por la cantidad agregada.
+                </div>
+                
+                <div class="text-end">
+                    <a href="{{ url_for('chefCocinero.insumos') }}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Actualizar Inventario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

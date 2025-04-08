@@ -1,143 +1,173 @@
 {% extends "layoutCocinero.html" %}
 {% block container %}
-
 <br>
-<div class="container mt-4">
-    <h2 class="mb-4">Crear Nueva Receta</h2>
-    
-    <form id="formReceta" method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <label for="nombre_receta" class="form-label">Nombre de la Receta</label>
-                <input type="text" class="form-control" id="nombre_receta" name="nombre_receta" required>
-            </div>
-            <div class="col-md-6">
-                <label for="peso_galleta" class="form-label">Peso por Galleta (gramos)</label>
-                <input type="number" class="form-control" id="peso_galleta" name="peso_galleta" value="100" min="1" required>
-            </div>
+<div class="container py-4">
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0">
+            <h2 class="text-center mb-0">Crear Nueva Receta</h2>
         </div>
-        
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <label for="descripcion" class="form-label">Descripción</label>
-                <textarea class="form-control" id="descripcion" name="descripcion" rows="2"></textarea>
-            </div>
-        </div>
-        
-        <div class="row mb-3">
-            <div class="col-md-3">
-                <label for="tiempo_preparacion" class="form-label">Tiempo (min)</label>
-                <input type="number" class="form-control" id="tiempo_preparacion" name="tiempo_preparacion" required>
-            </div>
-            <div class="col-md-3">
-                <label for="dias_caducidad" class="form-label">Días Caducidad</label>
-                <input type="number" class="form-control" id="dias_caducidad" name="dias_caducidad" required>
-            </div>
-            <div class="col-md-3">
-                <label for="porcentaje_ganancia" class="form-label">% Ganancia</label>
-                <input type="number" step="0.1" class="form-control" id="porcentaje_ganancia" name="porcentaje_ganancia" value="70" required>
-            </div>
-        </div>
-        
-        <h4 class="mt-4">Ingredientes</h4>
-        <div id="ingredientes-container">
-            <div class="ingrediente-row row mb-3">
-                <div class="col-md-5">
-                    <label class="form-label">Ingrediente</label>
-                    <select class="form-control ingrediente-select" name="ingredientes[]" required>
-                        <option value="">Seleccionar...</option>
-                        {% for mp in materias_primas %}
-                        <option value="{{ mp.id }}" data-unidad="{{ mp.unidad_medida }}">{{ mp.nombre }}</option>
-                        {% endfor %}
-                    </select>
+        <div class="card-body">
+            <form id="formReceta" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <label for="nombre_receta" class="form-label">Nombre de la Receta</label>
+                        <input type="text" class="form-control" id="nombre_receta" name="nombre_receta" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="peso_galleta" class="form-label">Peso por Galleta (gramos)</label>
+                        <input type="number" class="form-control" id="peso_galleta" name="peso_galleta" value="100" min="1" required>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Cantidad</label>
-                    <input type="number" step="0.01" class="form-control cantidad-input" name="cantidades[]" required>
+
+                <div class="mb-4">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="2"></textarea>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Unidad</label>
-                    <select class="form-control unidad-select" name="unidades[]" required>
-                        <option value="">Seleccionar...</option>
-                    </select>
+
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <label for="tiempo_preparacion" class="form-label">Tiempo (minutos)</label>
+                        <input type="number" class="form-control" id="tiempo_preparacion" name="tiempo_preparacion" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="dias_caducidad" class="form-label">Días de Caducidad</label>
+                        <input type="number" class="form-control" id="dias_caducidad" name="dias_caducidad" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="porcentaje_ganancia" class="form-label">% Ganancia</label>
+                        <input type="number" step="0.1" class="form-control" id="porcentaje_ganancia" name="porcentaje_ganancia" value="70" required>
+                    </div>
                 </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="button" class="btn btn-danger btn-remove-ingrediente">✕</button>
+
+                <div class="mb-4">
+                    <label class="form-label">Imagen de la galleta</label>
+                    <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*">
                 </div>
-            </div>
+
+                <div class="mb-4">
+                    <h4 class="border-bottom pb-2 mb-3">Ingredientes</h4>
+                    <div id="ingredientes-container">
+                        <div class="ingrediente-row row mb-3">
+                            <div class="col-md-5 mb-2">
+                                <label class="form-label">Ingrediente</label>
+                                <select class="form-select ingrediente-select" name="ingredientes[]" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for mp in materias_primas %}
+                                    <option value="{{ mp.id }}" data-unidad="{{ mp.unidad_medida }}">{{ mp.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Cantidad</label>
+                                <input type="number" step="0.01" class="form-control cantidad-input" name="cantidades[]" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Unidad</label>
+                                <select class="form-select unidad-select" name="unidades[]" required>
+                                    <option value="">Seleccionar...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end mb-2">
+                                <button type="button" class="btn btn-outline-danger btn-remove-ingrediente w-100">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btn-add-ingrediente" class="btn btn-outline-secondary">
+                        <i class="fas fa-plus me-2"></i>Agregar Ingrediente
+                    </button>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-dark btn-lg">
+                        <i class="fas fa-save me-2"></i>Guardar Receta
+                    </button>
+                </div>
+            </form>
         </div>
-        
-        <button type="button" id="btn-add-ingrediente" class="btn btn-secondary mb-4">
-            ➕ Agregar Ingrediente
-        </button>
-        
-        <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary btn-lg">Guardar Receta</button>
-        </div>
-    </form>
+    </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Agregar nuevo ingrediente
-    document.getElementById('btn-add-ingrediente').addEventListener('click', function() {
-        const container = document.getElementById('ingredientes-container');
-        const newRow = container.firstElementChild.cloneNode(true);
-        
-        // Limpiar valores
-        newRow.querySelector('.ingrediente-select').selectedIndex = 0;
-        newRow.querySelector('.cantidad-input').value = '';
-        newRow.querySelector('.unidad-select').innerHTML = '<option value="">Seleccionar...</option>';
-        
-        container.appendChild(newRow);
-        addIngredienteEvents(newRow);
-    });
-    
-    // Configurar eventos para ingredientes existentes
-    document.querySelectorAll('.ingrediente-row').forEach(row => {
-        addIngredienteEvents(row);
-    });
-    
-    function addIngredienteEvents(row) {
-        // Cargar unidades cuando se selecciona ingrediente
-        row.querySelector('.ingrediente-select').addEventListener('change', function() {
-            const ingredienteId = this.value;
-            const unidadSelect = this.closest('.ingrediente-row').querySelector('.unidad-select');
-            
-            if (ingredienteId) {
-                fetch(`/api/unidades_ingrediente/${ingredienteId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        unidadSelect.innerHTML = data.unidades.map(u => 
-                            `<option value="${u.valor}">${u.texto}</option>`
-                        ).join('');
-                    });
-            } else {
-                unidadSelect.innerHTML = '<option value="">Seleccionar...</option>';
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        // Agregar nuevo ingrediente
+        document.getElementById('btn-add-ingrediente').addEventListener('click', function () {
+            const container = document.getElementById('ingredientes-container');
+            const newRow = container.firstElementChild.cloneNode(true);
+
+            // Limpiar valores
+            newRow.querySelector('.ingrediente-select').selectedIndex = 0;
+            newRow.querySelector('.cantidad-input').value = '';
+            newRow.querySelector('.unidad-select').innerHTML = '<option value="">Seleccionar...</option>';
+
+            container.appendChild(newRow);
+            addIngredienteEvents(newRow);
         });
-        
-        // Eliminar ingrediente
-        row.querySelector('.btn-remove-ingrediente').addEventListener('click', function() {
-            if (document.querySelectorAll('.ingrediente-row').length > 1) {
-                row.remove();
-            } else {
-                alert('Debe haber al menos un ingrediente');
-            }
+
+        // Configurar eventos para ingredientes existentes
+        document.querySelectorAll('.ingrediente-row').forEach(row => {
+            addIngredienteEvents(row);
         });
-    }
-});
+
+        function addIngredienteEvents(row) {
+            // Cargar unidades cuando se selecciona ingrediente
+            row.querySelector('.ingrediente-select').addEventListener('change', function () {
+                const ingredienteId = this.value;
+                const unidadSelect = this.closest('.ingrediente-row').querySelector('.unidad-select');
+
+                if (ingredienteId) {
+                    fetch(`/api/unidades_ingrediente/${ingredienteId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            unidadSelect.innerHTML = data.unidades.map(u =>
+                                `<option value="${u.valor}">${u.texto}</option>`
+                            ).join('');
+                        });
+                } else {
+                    unidadSelect.innerHTML = '<option value="">Seleccionar...</option>';
+                }
+            });
+
+            // Eliminar ingrediente
+            row.querySelector('.btn-remove-ingrediente').addEventListener('click', function () {
+                if (document.querySelectorAll('.ingrediente-row').length > 1) {
+                    row.remove();
+                } else {
+                    alert('Debe haber al menos un ingrediente');
+                }
+            });
+        }
+    });
 </script>
 
 <style>
-.ingrediente-row {
-    transition: all 0.3s ease;
-}
-.btn-remove-ingrediente {
-    padding: 0.375rem 0.75rem;
-}
+    .card {
+        border-radius: 0.5rem;
+    }
+    
+    .ingrediente-row {
+        transition: all 0.3s ease;
+        padding: 1rem;
+        background-color: #f9f9f9;
+        border-radius: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 0.25rem;
+    }
+    
+    .btn-outline-danger:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .btn-lg {
+        padding: 0.5rem 1rem;
+    }
 </style>
 
 {% endblock %}

@@ -1,53 +1,104 @@
 {% extends "layoutCocinero.html" %}
 
 {% block container %}
-<div class="container">
-    <h2>Detalle de Receta: {{ receta.nombre_receta }}</h2>
-    
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <h4>Información General</h4>
-            <p><strong>Descripción:</strong> {{ receta.descripcion }}</p>
-            <p><strong>Ingrediente Especial:</strong> {{ receta.ingrediente_especial }}</p>
-            <p><strong>Tiempo de Preparación:</strong> {{ receta.tiempo_preparacion }} minutos</p>
-            <p><strong>Días de Caducidad:</strong> {{ receta.dias_caducidad }} días</p>
-            <p><strong>Galletas por Receta:</strong> {{ receta.cantidad_galletas_producidas }}</p>
+<div class="container py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light border-0">
+            <h3 class="mb-0 text-center">Detalle de Receta: {{ receta.nombre_receta }}</h3>
         </div>
         
-        <div class="col-md-6">
-            <h4>Información de la Galleta</h4>
-            {% if receta.galletas %}
-                {% set galleta = receta.galletas[0] %}
-                <p><strong>Nombre:</strong> {{ galleta.nombre }}</p>
-                <p><strong>Costo por Galleta:</strong> ${{ "%.2f"|format(galleta.costo_galleta) }}</p>
-                <p><strong>Precio de Venta:</strong> ${{ "%.2f"|format(galleta.precio) }}</p>
-                <p><strong>Margen de Ganancia:</strong> {{ "%.0f"|format((galleta.precio - galleta.costo_galleta) / galleta.costo_galleta * 100) }}%</p>
-            {% else %}
-                <p class="text-danger">No se ha creado la galleta asociada</p>
-            {% endif %}
+        <div class="card-body">
+            <!-- Sección de información general -->
+            <div class="row mb-4 g-3">
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title border-bottom pb-2">Información General</h5>
+                            <div class="mb-2">
+                                <strong>Descripción:</strong> 
+                                <p class="mb-0">{{ receta.descripcion }}</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Ingrediente Especial:</strong> 
+                                <p class="mb-0">{{ receta.ingrediente_especial }}</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Tiempo de Preparación:</strong> 
+                                <p class="mb-0">{{ receta.tiempo_preparacion }} minutos</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Días de Caducidad:</strong> 
+                                <p class="mb-0">{{ receta.dias_caducidad }} días</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Galletas por Receta:</strong> 
+                                <p class="mb-0">{{ receta.cantidad_galletas_producidas }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title border-bottom pb-2">Información de la Galleta</h5>
+                            {% if receta.galletas %}
+                                {% set galleta = receta.galletas[0] %}
+                                <div class="mb-2">
+                                    <strong>Nombre:</strong> 
+                                    <p class="mb-0">{{ galleta.nombre }}</p>
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Costo por Galleta:</strong> 
+                                    <p class="mb-0">${{ "%.2f"|format(galleta.costo_galleta) }}</p>
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Precio de Venta:</strong> 
+                                    <p class="mb-0">${{ "%.2f"|format(galleta.precio) }}</p>
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Margen de Ganancia:</strong> 
+                                    <p class="mb-0">{{ "%.0f"|format((galleta.precio - galleta.costo_galleta) / galleta.costo_galleta * 100) }}%</p>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning mb-0">No se ha creado la galleta asociada</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de ingredientes -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title border-bottom pb-2 mb-3">Ingredientes</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Ingrediente</th>
+                                    <th>Cantidad</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ingrediente in receta.ingredientes %}
+                                <tr>
+                                    <td>{{ ingrediente.materia_prima.nombre }}</td>
+                                    <td>{{ ingrediente.cantidad_necesaria }} {{ ingrediente.materia_prima.unidad_medida }}</td>
+                                    <td>{{ ingrediente.observaciones }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <a href="{{ url_for('chefCocinero.listar_recetas') }}" class="btn btn-secondary">Volver</a>
+            </div>
         </div>
     </div>
-    
-    <h4>Ingredientes</h4>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Ingrediente</th>
-                <th>Cantidad</th>
-                <th>Observaciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ingrediente in receta.ingredientes %}
-            <tr>
-                <td>{{ ingrediente.materia_prima.nombre }}</td>
-                <td>{{ ingrediente.cantidad_necesaria }} {{ ingrediente.materia_prima.unidad_medida }}</td>
-                <td>{{ ingrediente.observaciones }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    
-    <a href="{{ url_for('chefCocinero.listar_recetas') }}" class="btn btn-secondary">Volver</a>
 </div>
 {% endblock %}

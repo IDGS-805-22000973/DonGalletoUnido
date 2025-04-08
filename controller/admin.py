@@ -18,7 +18,7 @@ def menuAdmin():
 @admin_bp.route("/ABCempleados", methods=["GET", "POST"])
 @admin_required
 def ABCempleados():
-    usuarios = Usuarios.query.all()
+    usuarios = Usuarios.query.filter(Usuarios.rol != 'Admin').all()
     return render_template("admin/ABCempleados.html", usuarios=usuarios)
 
 @admin_bp.route("/AgregarEmpleado", methods=["GET", "POST"])
